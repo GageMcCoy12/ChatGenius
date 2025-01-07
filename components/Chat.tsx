@@ -13,14 +13,23 @@ interface ChatProps {
 export const Chat = ({ channelId }: ChatProps) => {
   const { messages, loading, error, sendMessage, updateMessageReactions, refreshMessages } = useMessages(channelId);
 
+  const handleSendMessage = async (message: { text: string; fileUrl?: string }) => {
+    try {
+      return await sendMessage(message);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  };
+
   if (error) {
     return (
       <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center p-4">
         <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error.toString()}</AlertDescription>
         </Alert>
         <button
-          onClick={refreshMessages}
+          onClick={(e) => refreshMessages()}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ReloadIcon className="h-4 w-4" />
@@ -31,17 +40,19 @@ export const Chat = ({ channelId }: ChatProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
-      <div className="flex-1 overflow-hidden pb-[80px]">
+    <div className="flex flex-col h-[calc(100vh-64px)] w-full relative">
+      <div className="flex-1 overflow-y-auto pb-[80px]">
         <MessageList 
           messages={messages} 
-          onReactionsUpdate={updateMessageReactions}
+          onReactionsUpdate={(messageId, reactions) => updateMessageReactions({ messageId, reactions })}
         />
       </div>
-      <MessageInput
-        onSend={sendMessage}
-        isLoading={loading}
-      />
+      <div className="absolute bottom-0 left-0 right-0 bg-background">
+        <MessageInput
+          onSend={handleSendMessage}
+          isLoading={loading}
+        />
+      </div>
     </div>
   );
 }; 

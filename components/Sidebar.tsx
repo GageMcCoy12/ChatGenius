@@ -3,7 +3,8 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Hash, MessageSquare, User } from 'lucide-react'
+import { ChevronDown, Hash, User } from 'lucide-react'
+import { useUsers } from '@/hooks/use-users'
 
 import {
   Sidebar,
@@ -21,20 +22,13 @@ import {
 
 const channels = [
   { name: 'General', icon: Hash, href: '/general' },
-  { name: 'Social', icon: Hash, href: '/social' },
-  { name: 'Help', icon: Hash, href: '/help' },
-]
-
-const directMessages = [
-  { name: 'Alice', icon: User, href: '/dm/alice' },
-  { name: 'Bob', icon: User, href: '/dm/bob' },
-  { name: 'Charlie', icon: User, href: '/dm/charlie' },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
   const [channelsOpen, setChannelsOpen] = React.useState(true)
   const [directMessagesOpen, setDirectMessagesOpen] = React.useState(true)
+  const { data: users, isLoading } = useUsers()
 
   return (
     <Sidebar>
@@ -101,16 +95,22 @@ export function AppSidebar() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <SidebarMenu>
-              {directMessages.map((dm) => (
-                <SidebarMenuItem key={dm.name}>
-                  <Link href={dm.href} passHref legacyBehavior>
+              {isLoading ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled>
+                    Loading users...
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : users?.map((user) => (
+                <SidebarMenuItem key={user.id}>
+                  <Link href={`/dm/${user.id}`} passHref legacyBehavior>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === dm.href}
+                      isActive={pathname === `/dm/${user.id}`}
                     >
                       <a>
-                        <dm.icon className="mr-2 h-4 w-4" />
-                        {dm.name}
+                        <User className="mr-2 h-4 w-4" />
+                        {user.username}
                       </a>
                     </SidebarMenuButton>
                   </Link>

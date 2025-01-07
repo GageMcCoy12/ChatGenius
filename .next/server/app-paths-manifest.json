@@ -1,7 +1,7 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/api/messages/route": "app/api/messages/route.js",
-  "/api/messages/[messageId]/reactions/route": "app/api/messages/[messageId]/reactions/route.js",
-  "/page": "app/page.js",
+  "/api/uploadthing/route": "app/api/uploadthing/route.js",
+  "/api/users/route": "app/api/users/route.js",
   "/general/page": "app/general/page.js"
 }

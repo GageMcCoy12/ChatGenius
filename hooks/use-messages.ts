@@ -1,97 +1,116 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Message } from '@/types/messages';
+import { pusherClient } from '@/lib/pusher';
 
-export const useMessages = (channelId: string) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useMessages(channelId: string) {
+  const queryClient = useQueryClient();
 
   // Fetch messages
-  const fetchMessages = async () => {
-    try {
-      setError(null);
-      const response = await axios.get<Message[]>(`/api/messages?channelId=${channelId}`);
-      
-      // Validate response data
-      if (!Array.isArray(response.data)) {
-        throw new Error('Invalid response format');
+  const { data: messages = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['messages', channelId],
+    queryFn: async () => {
+      const response = await fetch(`/api/messages?channelId=${channelId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
       }
-      
-      // Validate each message has required fields
-      const validMessages = response.data.every(msg => 
-        msg.id && msg.text && msg.userId && msg.user && 
-        typeof msg.user.username === 'string' &&
-        Array.isArray(msg.reactions)
-      );
-      
-      if (!validMessages) {
-        throw new Error('Invalid message format');
+      return response.json();
+    },
+  });
+
+  // Send message mutation
+  const { mutateAsync: sendMessage } = useMutation({
+    mutationFn: async (message: { text: string; fileUrl?: string }) => {
+      try {
+        console.log('Sending message:', {
+          text: message.text,
+          fileUrl: message.fileUrl,
+          channelId,
+        });
+
+        const response = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: message.text,
+            fileUrl: message.fileUrl,
+            channelId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Server response error:', {
+            request: {
+              text: message.text,
+              fileUrl: message.fileUrl,
+              channelId,
+            },
+            response: {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorData,
+              headers: Object.fromEntries(response.headers.entries()),
+            }
+          });
+          throw new Error(`Failed to send message: ${response.status} ${errorData}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Send message error:', error);
+        throw error;
       }
+    },
+  });
 
-      setMessages(response.data);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch messages');
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Send a message
-  const sendMessage = async (text: string) => {
-    try {
-      setError(null);
-      const response = await axios.post<Message>('/api/messages', {
-        text,
-        channelId,
+  // Update message reactions
+  const { mutateAsync: updateMessageReactions } = useMutation({
+    mutationFn: async ({ messageId, reactions }: { messageId: string; reactions: Message['reactions'] }) => {
+      const response = await fetch(`/api/messages/${messageId}/reactions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reactions }),
       });
-      
-      // Validate response data
-      if (!response.data.id || !response.data.text) {
-        throw new Error('Invalid message format');
+
+      if (!response.ok) {
+        throw new Error('Failed to update reactions');
       }
 
-      setMessages((prev) => [...prev, response.data]);
-      return response.data;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  };
+      return response.json();
+    },
+  });
 
-  // Update reactions for a message
-  const updateMessageReactions = async (messageId: string, updatedReactions: Message['reactions']) => {
-    try {
-      setError(null);
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, reactions: updatedReactions }
-            : msg
-        )
-      );
-    } catch (error) {
-      console.error('Error updating reactions:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update reactions');
-    }
-  };
-
-  // Load messages when channel changes
+  // Subscribe to real-time updates
   useEffect(() => {
-    if (channelId) {
-      setLoading(true);
-      fetchMessages();
+    if (!channelId) return;
+
+    try {
+      const channel = pusherClient.subscribe(channelId);
+
+      channel.bind('new-message', (newMessage: Message) => {
+        queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) => [
+          ...oldMessages,
+          newMessage,
+        ]);
+      });
+
+      return () => {
+        channel.unbind('new-message');
+        pusherClient.unsubscribe(channelId);
+      };
+    } catch (error) {
+      console.error('Pusher subscription error:', error);
     }
-  }, [channelId]);
+  }, [channelId, queryClient]);
 
   return {
     messages,
-    loading,
+    loading: isLoading,
     error,
     sendMessage,
-    refreshMessages: fetchMessages,
     updateMessageReactions,
+    refreshMessages: refetch,
   };
-}; 
+} 
