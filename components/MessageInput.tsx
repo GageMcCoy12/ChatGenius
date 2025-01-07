@@ -1,48 +1,50 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Send } from 'lucide-react'
-import { useUser } from '@clerk/nextjs'
+import { Message } from '@/types/messages'
 
 interface MessageInputProps {
-  onSendMessage: (message: string, timestamp: Date, user: {
-    imageUrl: string;
-    username: string;
-    fullName: string;
-  }) => void
+  onSend: (text: string) => Promise<Message>
+  isLoading?: boolean
 }
 
-export function MessageInput({ onSendMessage }: MessageInputProps) {
+export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
   const [message, setMessage] = useState('')
-  const { user } = useUser()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (message.trim() && user) {
-      onSendMessage(message, new Date(), {
-        imageUrl: user.imageUrl,
-        username: user.username || user.primaryEmailAddress?.emailAddress?.split('@')[0] || 'user',
-        fullName: user.fullName || '',
-      })
+    if (!message.trim() || isLoading) return
+
+    try {
+      await onSend(message)
       setMessage('')
+    } catch (error) {
+      console.error('Failed to send message:', error)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
-      <Input
-        type="text"
-        placeholder="Type your message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="flex-grow"
-      />
-      <Button type="submit" size="icon">
-        <Send className="h-4 w-4" />
-        <span className="sr-only">Send message</span>
-      </Button>
+    <form onSubmit={handleSubmit} className="p-4 border-t">
+      <div className="flex gap-2">
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+          className="min-h-[20px] max-h-[200px]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSubmit(e)
+            }
+          }}
+        />
+        <Button type="submit" disabled={isLoading || !message.trim()}>
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
     </form>
   )
 }
