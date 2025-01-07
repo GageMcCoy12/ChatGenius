@@ -17,9 +17,19 @@ export async function GET(req: Request) {
       return new NextResponse('Channel ID is required', { status: 400 });
     }
 
+    // Ensure channel exists
+    const channel = await prisma.channel.upsert({
+      where: { id: channelId },
+      update: {},
+      create: {
+        id: channelId,
+        name: channelId,
+      },
+    });
+
     const messages = await prisma.message.findMany({
       where: {
-        channelId: channelId,
+        channelId: channel.id,
       },
       include: {
         user: true,
@@ -50,11 +60,22 @@ export async function POST(req: Request) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
+    // Ensure channel exists
+    const channel = await prisma.channel.upsert({
+      where: { id: channelId },
+      update: {},
+      create: {
+        id: channelId,
+        name: channelId,
+      },
+    });
+
+    // Create message
     const message = await prisma.message.create({
       data: {
         text,
         userId: user.id,
-        channelId,
+        channelId: channel.id,
       },
       include: {
         user: true,
@@ -64,6 +85,6 @@ export async function POST(req: Request) {
     return NextResponse.json(message);
   } catch (error) {
     console.error('POST MESSAGE ERROR:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse(error instanceof Error ? error.message : 'Internal Error', { status: 500 });
   }
 } 

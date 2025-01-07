@@ -1,5 +1,4 @@
 {
-  "/api/messages/route": "app/api/messages/route.js",
   "/general/page": "app/general/page.js",
   "/page": "app/page.js"
 }
