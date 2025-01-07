@@ -2,28 +2,37 @@
 
 import { useState } from 'react'
 import { MessageInput } from '@/components/MessageInput'
-import { format } from 'date-fns'
+import { Message } from '@/components/Message'
+
+interface MessageType {
+  text: string;
+  timestamp: Date;
+  user: {
+    imageUrl: string;
+    username: string;
+    fullName: string;
+  };
+}
 
 export default function GeneralPage() {
-  const [messages, setMessages] = useState<Array<{ text: string; timestamp: Date }>>([])
+  const [messages, setMessages] = useState<MessageType[]>([])
 
-  const handleSendMessage = (message: string, timestamp: Date) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message, timestamp }])
+  const handleSendMessage = (message: string, timestamp: Date, user: MessageType['user']) => {
+    setMessages((prevMessages) => [...prevMessages, { text: message, timestamp, user }])
   }
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-grow p-6 overflow-auto">
-        {/* Removed h1 tag as per update 1 */}
-        <p className="mb-4">Welcome to the general discussion channel. Here you can talk about anything related to our community.</p> {/* Updated paragraph as per update 2 */}
-        <div className="space-y-2">
+        <p className="mb-4">Welcome to the general discussion channel. Here you can talk about anything related to our community.</p>
+        <div className="space-y-6">
           {messages.map((msg, index) => (
-            <div key={index} className="bg-muted p-2 rounded-md">
-              <p>{msg.text}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Sent: {format(msg.timestamp, 'HH:mm:ss')}
-              </p>
-            </div>
+            <Message
+              key={index}
+              text={msg.text}
+              timestamp={msg.timestamp}
+              user={msg.user}
+            />
           ))}
         </div>
       </div>

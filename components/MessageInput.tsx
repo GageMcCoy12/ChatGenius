@@ -4,18 +4,28 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Send } from 'lucide-react'
+import { useUser } from '@clerk/nextjs'
 
 interface MessageInputProps {
-  onSendMessage: (message: string, timestamp: Date) => void
+  onSendMessage: (message: string, timestamp: Date, user: {
+    imageUrl: string;
+    username: string;
+    fullName: string;
+  }) => void
 }
 
 export function MessageInput({ onSendMessage }: MessageInputProps) {
   const [message, setMessage] = useState('')
+  const { user } = useUser()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (message.trim()) {
-      onSendMessage(message, new Date())
+    if (message.trim() && user) {
+      onSendMessage(message, new Date(), {
+        imageUrl: user.imageUrl,
+        username: user.username || user.primaryEmailAddress?.emailAddress?.split('@')[0] || 'user',
+        fullName: user.fullName || '',
+      })
       setMessage('')
     }
   }
