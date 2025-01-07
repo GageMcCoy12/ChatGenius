@@ -23,8 +23,8 @@ export function Header({ channelName }: HeaderProps) {
   }
 
   return (
-    <header className="border-b">
-      <div className="flex h-16 items-center px-4">
+    <header className="fixed top-0 left-[240px] right-0 bg-background border-b z-1">
+      <div className="flex h-16 items-center px-8">
         <h2 className="text-lg font-semibold">{channelName}</h2>
         <div className="ml-auto flex items-center space-x-4">
           {isSignedIn ? (

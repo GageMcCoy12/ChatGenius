@@ -37,6 +37,7 @@ model Message {
   channelId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  reactions Text[]
   user      User     @relation(fields: [userId], references: [id])
   channel   Channel  @relation(fields: [channelId], references: [id])
 }

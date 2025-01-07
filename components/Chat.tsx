@@ -12,8 +12,10 @@ export const Chat = ({ channelId }: ChatProps) => {
   const { messages, loading, sendMessage } = useMessages(channelId);
 
   return (
-    <div className="flex flex-col h-full">
-      <MessageList messages={messages} />
+    <div className="flex flex-col h-[calc(100vh-64px)]">
+      <div className="flex-1 overflow-hidden pb-[80px]">
+        <MessageList messages={messages} />
+      </div>
       <MessageInput
         onSend={sendMessage}
         isLoading={loading}
