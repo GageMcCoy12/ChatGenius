@@ -1,8 +1,9 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { getOrCreateUser } from '@/lib/user'
 
-
-export default clerkMiddleware()
+export default clerkMiddleware({
+  secretKey: process.env.CLERK_SECRET_KEY
+});
 
 export const config = {
   matcher: [
