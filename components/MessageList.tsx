@@ -3,12 +3,14 @@ import { Message } from '@/types/messages';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+import { MessageReactions } from './MessageReactions';
 
 interface MessageListProps {
   messages: Message[];
+  onReactionsUpdate: (messageId: string, reactions: Message['reactions']) => void;
 }
 
-export const MessageList = ({ messages }: MessageListProps) => {
+export const MessageList = ({ messages, onReactionsUpdate }: MessageListProps) => {
   const { user } = useUser();
 
   return (
@@ -37,6 +39,11 @@ export const MessageList = ({ messages }: MessageListProps) => {
             <div className="rounded-lg px-4 py-2 bg-muted max-w-sm">
               {message.text}
             </div>
+            <MessageReactions 
+              messageId={message.id} 
+              initialReactions={message.reactions} 
+              onReactionsUpdate={onReactionsUpdate}
+            />
           </div>
         </div>
       ))}

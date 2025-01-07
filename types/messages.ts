@@ -1,3 +1,8 @@
+interface Reaction {
+  emoji: string;
+  _count: number;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -7,6 +12,7 @@ export interface Message {
   user: {
     id: string;
     username: string;
-    imageURL?: string;
+    imageURL: string | null;
   };
+  reactions: Reaction[];
 } 

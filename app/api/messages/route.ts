@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { Message } from '@/types/messages';
 
 // Get messages for a channel
 export async function GET(req: Request) {
@@ -27,22 +28,63 @@ export async function GET(req: Request) {
       },
     });
 
-    const messages = await prisma.message.findMany({
+    // Get messages with user data
+    const dbMessages = await prisma.message.findMany({
       where: {
         channelId: channel.id,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            imageURL: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
       },
     });
 
-    return NextResponse.json(messages);
+    // Get reactions for each message
+    const messagesWithReactions = await Promise.all(
+      dbMessages.map(async (message) => {
+        const reactions = await prisma.messageReaction.groupBy({
+          by: ['emoji'],
+          where: { messageId: message.id },
+          _count: true,
+        });
+
+        // Format to match our Message type
+        const formattedMessage: Message = {
+          id: message.id,
+          text: message.text,
+          userId: message.userId,
+          channelId: message.channelId,
+          createdAt: message.createdAt.toISOString(),
+          user: {
+            id: message.user.id,
+            username: message.user.username,
+            imageURL: message.user.imageURL,
+          },
+          reactions: reactions.map(r => ({
+            emoji: r.emoji,
+            _count: r._count,
+          })),
+        };
+
+        return formattedMessage;
+      })
+    );
+
+    return NextResponse.json(messagesWithReactions);
   } catch (error) {
     console.error('GET MESSAGES ERROR:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to fetch messages' }), 
+      { status: 500 }
+    );
   }
 }
 
@@ -71,7 +113,7 @@ export async function POST(req: Request) {
     });
 
     // Create message
-    const message = await prisma.message.create({
+    const dbMessage = await prisma.message.create({
       data: {
         text,
         userId: user.id,
@@ -81,6 +123,13 @@ export async function POST(req: Request) {
         user: true,
       },
     });
+
+    // Format message to match our Message type
+    const message: Message = {
+      ...dbMessage,
+      createdAt: dbMessage.createdAt.toISOString(),
+      reactions: [],
+    };
 
     return NextResponse.json(message);
   } catch (error) {

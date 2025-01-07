@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model UserRole {
@@ -28,6 +27,7 @@ model User {
   role         UserRole       @relation(fields: [roleId], references: [id])
   messages     Message[]
   channelAccess ChannelAccess[]
+  reactions    MessageReaction[]
 }
 
 model Message {
@@ -37,9 +37,21 @@ model Message {
   channelId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  reactions Text[]
   user      User     @relation(fields: [userId], references: [id])
   channel   Channel  @relation(fields: [channelId], references: [id])
+  reactions MessageReaction[]
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
 }
 
 model ChannelAccess {
