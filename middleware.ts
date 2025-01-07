@@ -1,4 +1,6 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
+import { getOrCreateUser } from '@/lib/user'
+
 
 export default clerkMiddleware()
 

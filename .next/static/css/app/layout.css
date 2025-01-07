@@ -990,14 +990,14 @@ video {
 .max-w-\[--skeleton-width\] {
   max-width: var(--skeleton-width);
 }
+.max-w-\[calc\(100\%-120px\)\] {
+  max-width: calc(100% - 120px);
+}
 .max-w-lg {
   max-width: 32rem;
 }
 .max-w-max {
   max-width: max-content;
-}
-.max-w-\[calc\(100\%-120px\)\] {
-  max-width: calc(100% - 120px);
 }
 .flex-1 {
   flex: 1 1 0%;
@@ -1180,9 +1180,6 @@ video {
 }
 .whitespace-pre-line {
   white-space: pre-line;
-}
-.whitespace-pre-wrap {
-  white-space: pre-wrap;
 }
 .break-words {
   overflow-wrap: break-word;

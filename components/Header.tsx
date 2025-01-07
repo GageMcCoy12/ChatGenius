@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs"
+import { SignInButton, useUser, useClerk } from "@clerk/nextjs"
 
 interface HeaderProps {
   channelName: string;
@@ -16,6 +16,11 @@ interface HeaderProps {
 
 export function Header({ channelName }: HeaderProps) {
   const { user, isSignedIn } = useUser()
+  const { signOut } = useClerk()
+
+  const handleSignOut = () => {
+    signOut()
+  }
 
   return (
     <header className="border-b">
@@ -48,8 +53,8 @@ export function Header({ channelName }: HeaderProps) {
                 <DropdownMenuItem>
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <SignOutButton>Log out</SignOutButton>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
