@@ -5,7 +5,7 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Message } from '@/types/messages';
 
 interface ChatProps {
@@ -17,28 +17,39 @@ interface LastMessage {
   timestamp: number;
 }
 
+interface LastSentMessage {
+  text: string;
+  timestamp: number;
+}
+
 export const Chat = ({ channelId }: ChatProps) => {
   const { messages, loading, error, sendMessage, refreshMessages, updateReactions } = useMessages(channelId);
   const [lastMessage, setLastMessage] = useState<LastMessage | null>(null);
+  const [lastSentMessage, setLastSentMessage] = useState<LastSentMessage | null>(null);
+  const activeChannelRef = useRef(channelId);
+  const isSending = useRef(false);
+
+  // Update active channel ref and reset state when channel changes
+  useEffect(() => {
+    activeChannelRef.current = channelId;
+    setLastSentMessage(null);
+    isSending.current = false;
+    
+    // Cleanup function
+    return () => {
+      isSending.current = false;
+    };
+  }, [channelId]);
 
   const handleSendMessage = async (message: { text: string; fileUrl?: string }) => {
     try {
-      // Check if this is a duplicate message within 2 seconds
-      if (lastMessage && 
-          lastMessage.text === message.text && 
-          Date.now() - lastMessage.timestamp < 2000) {
-        throw new Error('Please wait before sending the same message again');
-      }
-
-      // Update last message
-      setLastMessage({
-        text: message.text,
-        timestamp: Date.now()
-      });
-
       return await sendMessage(message);
     } catch (error) {
-      console.error('Error sending message:', error);
+      if (error instanceof Error && error.message === 'Duplicate message') {
+        // Silently ignore duplicate messages
+        return;
+      }
+      console.error('Failed to send message:', error);
       throw error;
     }
   };

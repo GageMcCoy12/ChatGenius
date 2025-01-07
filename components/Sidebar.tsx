@@ -7,6 +7,9 @@ import { ChevronDown, Hash, User } from 'lucide-react'
 import { useUsers } from '@/hooks/use-users'
 import { useChannels } from '@/hooks/use-channels'
 import { ChannelCreateDialog } from './ChannelCreateDialog'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { PresenceIndicator } from './PresenceIndicator'
+import { useActiveUsers } from '@/hooks/use-active-users'
 
 import {
   Sidebar,
@@ -28,6 +31,7 @@ export function AppSidebar() {
   const [directMessagesOpen, setDirectMessagesOpen] = React.useState(true)
   const { data: users, isLoading: isLoadingUsers } = useUsers()
   const { data: channels, isLoading: isLoadingChannels } = useChannels()
+  const { activeUsers } = useActiveUsers()
 
   return (
     <Sidebar>
@@ -116,8 +120,14 @@ export function AppSidebar() {
                       asChild
                       isActive={pathname === `/dm/${user.id}`}
                     >
-                      <a>
-                        <User className="mr-2 h-4 w-4" />
+                      <a className="flex items-center gap-2">
+                        <div className="relative">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={user.imageURL || undefined} alt={user.username} />
+                            <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <PresenceIndicator isActive={activeUsers?.includes(user.id)} />
+                        </div>
                         {user.username}
                       </a>
                     </SidebarMenuButton>

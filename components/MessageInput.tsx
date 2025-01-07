@@ -18,10 +18,12 @@ interface MessageInputProps {
 export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
   const [message, setMessage] = useState('')
   const [displayMessage, setDisplayMessage] = useState('')
+  const [cursorPosition, setCursorPosition] = useState(0)
   const [fileUrl, setFileUrl] = useState('')
   const [activeFormats, setActiveFormats] = useState<string[]>([])
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isSubmitting = useRef(false)
 
   // Auto-resize textarea
   const adjustTextareaHeight = () => {
@@ -34,13 +36,23 @@ export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
 
   useEffect(() => {
     adjustTextareaHeight()
-  }, [displayMessage])
+    // Reset state when unmounting or changing channels
+    return () => {
+      setMessage('');
+      setDisplayMessage('');
+      setFileUrl('');
+      setActiveFormats([]);
+      isSubmitting.current = false;
+    };
+  }, []);
 
+  // Update cursor position on selection or cursor movement
   const handleSelectionChange = () => {
     const textarea = textareaRef.current
     if (textarea) {
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
+      setCursorPosition(start)
       if (start !== end) {
         setSelection({ start, end })
       } else {
@@ -88,6 +100,14 @@ export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
     displayText = displayText.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold">$1</span>')
     displayText = displayText.replace(/\*(.*?)\*/g, '<span class="italic">$1</span>')
     displayText = displayText.replace(/__(.*?)__/g, '<span class="underline">$1</span>')
+    
+    // Insert blinking caret at cursor position
+    if (cursorPosition >= 0 && cursorPosition <= msg.length) {
+      const beforeCursor = displayText.slice(0, cursorPosition)
+      const afterCursor = displayText.slice(cursorPosition)
+      displayText = `${beforeCursor}<span class="relative"><span class="absolute top-0 -right-[2px] h-full w-0.5 bg-primary animate-caret"></span></span>${afterCursor}`
+    }
+    
     setDisplayMessage(displayText)
   }
 
@@ -97,30 +117,48 @@ export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
     updateDisplayMessage(newMessage)
   }
 
+  // Update display when cursor position changes
+  useEffect(() => {
+    updateDisplayMessage(message)
+  }, [cursorPosition, message])
+
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if ((!message.trim() && !fileUrl) || isLoading) return
+    e.preventDefault();
+    if ((!message.trim() && !fileUrl) || isLoading || isSubmitting.current) return;
+
+    isSubmitting.current = true;
+    const currentMessage = message;
+    const currentFileUrl = fileUrl;
 
     try {
-      await onSend({ text: message, fileUrl })
-      setMessage('')
-      setDisplayMessage('')
-      setFileUrl('')
-      setActiveFormats([])
+      await onSend({ text: currentMessage, fileUrl: currentFileUrl });
+      setMessage('');
+      setDisplayMessage('');
+      setFileUrl('');
+      setActiveFormats([]);
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
+        textareaRef.current.style.height = 'auto';
       }
     } catch (error) {
-      console.error('Failed to send message:', error)
+      console.error('Failed to send message:', error);
+    } finally {
+      isSubmitting.current = false;
     }
-  }
+  };
 
   const handleFileChange = (url?: string) => {
     setFileUrl(url || '')
   }
 
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="fixed bottom-0 left-[240px] right-0 bg-background border-t z-1">
+    <form onSubmit={handleSubmit} className="fixed bottom-0 left-[255px] right-0 bg-background border-t z-1">
       <div className="px-8 py-4">
         {fileUrl && (
           <div className="mb-4">
@@ -156,19 +194,15 @@ export const MessageInput = ({ onSend, isLoading }: MessageInputProps) => {
                 value={message}
                 onChange={handleMessageChange}
                 onSelect={handleSelectionChange}
+                onKeyUp={handleSelectionChange}
+                onClick={handleSelectionChange}
                 placeholder="Type a message..."
                 className="opacity-0 absolute inset-0 resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSubmit(e)
-                  }
-                }}
                 rows={1}
               />
               <div 
                 className="min-h-[40px] max-h-[200px] p-3 rounded-md border bg-background text-sm"
-                dangerouslySetInnerHTML={{ __html: displayMessage || 'Type a message...' }}
+                dangerouslySetInnerHTML={{ __html: displayMessage || '<span class="text-muted-foreground">Type a message...</span>' }}
               />
             </div>
             <div className="flex-shrink-0 flex gap-2">

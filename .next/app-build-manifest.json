@@ -21,6 +21,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/me/route.js"
     ],
+    "/api/presence/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/presence/route.js"
+    ],
     "/api/users/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -31,25 +36,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/channels/[channelName]/page.js"
     ],
-    "/api/uploadthing/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/uploadthing/route.js"
-    ],
     "/api/messages/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/messages/route.js"
+    ],
+    "/api/uploadthing/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/uploadthing/route.js"
     ],
     "/api/channels/resolve/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/channels/resolve/route.js"
     ],
-    "/api/messages/[messageId]/reactions/route": [
+    "/dm/[userId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/messages/[messageId]/reactions/route.js"
+      "static/chunks/app/dm/[userId]/page.js"
     ]
   }
 }

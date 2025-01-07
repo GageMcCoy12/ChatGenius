@@ -15,6 +15,7 @@ import { usePathname } from 'next/navigation'
 import { useUsers } from '@/hooks/use-users'
 import { useChannels } from '@/hooks/use-channels'
 import { Hash, User } from 'lucide-react'
+import { SearchMessages } from "@/components/SearchMessages"
 
 interface HeaderProps {
   channelName: string;
@@ -59,10 +60,13 @@ export function Header({ channelName }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 left-[240px] right-0 bg-background border-b z-1">
+    <header className="fixed top-0 left-[255px] right-0 bg-background border-b z-1">
       <div className="flex h-16 items-center px-8">
         <h2 className="text-lg font-semibold">{getContextTitle()}</h2>
-        <div className="ml-auto flex items-center space-x-4">
+        <div className="flex-1 px-4">
+          <SearchMessages />
+        </div>
+        <div className="flex items-center space-x-4">
           {isSignedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
