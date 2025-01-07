@@ -5,7 +5,7 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Message } from '@/types/messages';
 
 interface ChatProps {
@@ -26,29 +26,25 @@ export const Chat = ({ channelId }: ChatProps) => {
   const { messages, loading, error, sendMessage, refreshMessages, updateReactions } = useMessages(channelId);
   const [lastMessage, setLastMessage] = useState<LastMessage | null>(null);
   const [lastSentMessage, setLastSentMessage] = useState<LastSentMessage | null>(null);
-  const activeChannelRef = useRef(channelId);
-  const isSending = useRef(false);
-
-  // Update active channel ref and reset state when channel changes
-  useEffect(() => {
-    activeChannelRef.current = channelId;
-    setLastSentMessage(null);
-    isSending.current = false;
-    
-    // Cleanup function
-    return () => {
-      isSending.current = false;
-    };
-  }, [channelId]);
 
   const handleSendMessage = async (message: { text: string; fileUrl?: string }) => {
+    if (!message.text.trim() && !message.fileUrl) return;
+
+    // Prevent duplicate messages within 2 seconds
+    if (lastSentMessage && 
+        lastSentMessage.text === message.text && 
+        Date.now() - lastSentMessage.timestamp < 2000) {
+      return;
+    }
+
     try {
+      setLastSentMessage({
+        text: message.text,
+        timestamp: Date.now()
+      });
+      
       return await sendMessage(message);
     } catch (error) {
-      if (error instanceof Error && error.message === 'Duplicate message') {
-        // Silently ignore duplicate messages
-        return;
-      }
       console.error('Failed to send message:', error);
       throw error;
     }

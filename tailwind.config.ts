@@ -83,16 +83,11 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
-  			},
-  			caret: {
-  				'0%, 100%': { opacity: '0' },
-  				'50%': { opacity: '1' },
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out',
-  			caret: 'caret 1s ease-in-out infinite',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
   		}
   	}
   },

@@ -1849,6 +1849,11 @@ video {
 .overflow-x-hidden {
   overflow-x: hidden;
 }
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .whitespace-nowrap {
   white-space: nowrap;
 }
@@ -1917,6 +1922,9 @@ video {
 .border-r-2 {
   border-right-width: 2px;
 }
+.border-l-2 {
+  border-left-width: 2px;
+}
 .border-dashed {
   border-style: dashed;
 }
@@ -1946,6 +1954,9 @@ video {
 }
 .border-transparent {
   border-color: transparent;
+}
+.border-muted {
+  border-color: hsl(var(--muted));
 }
 .border-l-transparent {
   border-left-color: transparent;
@@ -2150,6 +2161,9 @@ video {
 }
 .pt-4 {
   padding-top: 1rem;
+}
+.pl-2 {
+  padding-left: 0.5rem;
 }
 .text-left {
   text-align: left;
