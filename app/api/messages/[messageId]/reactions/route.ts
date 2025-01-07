@@ -1,79 +1,62 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { pusherServer } from '@/lib/pusher';
 
-// Add a reaction
-export async function POST(
+export async function PUT(
   req: Request,
   { params }: { params: { messageId: string } }
 ) {
   try {
-    const user = await currentUser();
-    if (!user) {
+    const { userId } = await auth();
+    if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { emoji } = await req.json();
-    if (!emoji) {
-      return new NextResponse('Emoji is required', { status: 400 });
+    const { reactions } = await req.json();
+    const messageId = params.messageId;
+
+    // Get the message to check if it exists and get its channelId
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: { reactions: true },
+    });
+
+    if (!message) {
+      return new NextResponse('Message not found', { status: 404 });
     }
 
-    // Toggle the reaction (add if doesn't exist, remove if it does)
-    const existingReaction = await prisma.messageReaction.findUnique({
-      where: {
-        userId_messageId_emoji: {
-          userId: user.id,
-          messageId: params.messageId,
-          emoji,
+    // Delete existing reactions for this message
+    await prisma.messageReaction.deleteMany({
+      where: { messageId },
+    });
+
+    // Create new reactions
+    const updatedMessage = await prisma.message.update({
+      where: { id: messageId },
+      data: {
+        reactions: {
+          create: reactions.map((reaction: any) => ({
+            emoji: reaction.emoji,
+            userId: reaction.userId,
+          })),
+        },
+      },
+      include: {
+        reactions: {
+          include: {
+            user: true,
+          },
         },
       },
     });
 
-    if (existingReaction) {
-      // Remove reaction if it exists
-      await prisma.messageReaction.delete({
-        where: { id: existingReaction.id },
-      });
-    } else {
-      // Add reaction if it doesn't exist
-      await prisma.messageReaction.create({
-        data: {
-          emoji,
-          userId: user.id,
-          messageId: params.messageId,
-        },
-      });
-    }
+    // Trigger real-time update
+    await pusherServer.trigger(message.channelId, 'message-updated', updatedMessage);
 
-    // Get updated reactions for the message
-    const reactions = await prisma.messageReaction.groupBy({
-      by: ['emoji'],
-      where: { messageId: params.messageId },
-      _count: true,
-    });
-
-    return NextResponse.json(reactions);
+    return NextResponse.json(updatedMessage);
   } catch (error) {
-    console.error('REACTION ERROR:', error);
-    return new NextResponse('Internal Error', { status: 500 });
-  }
-}
-
-// Get reactions for a message
-export async function GET(
-  req: Request,
-  { params }: { params: { messageId: string } }
-) {
-  try {
-    const reactions = await prisma.messageReaction.groupBy({
-      by: ['emoji'],
-      where: { messageId: params.messageId },
-      _count: true,
-    });
-
-    return NextResponse.json(reactions);
-  } catch (error) {
-    console.error('GET REACTIONS ERROR:', error);
+    console.error('UPDATE REACTIONS ERROR:', error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 } 

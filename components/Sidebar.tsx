@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronDown, Hash, User } from 'lucide-react'
 import { useUsers } from '@/hooks/use-users'
+import { useChannels } from '@/hooks/use-channels'
+import { ChannelCreateDialog } from './ChannelCreateDialog'
 
 import {
   Sidebar,
@@ -20,15 +22,12 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 
-const channels = [
-  { name: 'General', icon: Hash, href: '/general' },
-]
-
 export function AppSidebar() {
   const pathname = usePathname()
   const [channelsOpen, setChannelsOpen] = React.useState(true)
   const [directMessagesOpen, setDirectMessagesOpen] = React.useState(true)
-  const { data: users, isLoading } = useUsers()
+  const { data: users, isLoading: isLoadingUsers } = useUsers()
+  const { data: channels, isLoading: isLoadingChannels } = useChannels()
 
   return (
     <Sidebar>
@@ -47,27 +46,36 @@ export function AppSidebar() {
           onOpenChange={setChannelsOpen}
           className="space-y-2"
         >
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton className="w-full justify-between">
-              Channels
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  channelsOpen ? 'rotate-180 transform' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton className="flex-1 justify-between">
+                Channels
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    channelsOpen ? 'rotate-180 transform' : ''
+                  }`}
+                />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <ChannelCreateDialog />
+          </div>
           <CollapsibleContent>
             <SidebarMenu>
-              {channels.map((channel) => (
-                <SidebarMenuItem key={channel.name}>
-                  <Link href={channel.href} passHref legacyBehavior>
+              {isLoadingChannels ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled>
+                    Loading channels...
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : channels?.map((channel) => (
+                <SidebarMenuItem key={channel.id}>
+                  <Link href={`/channels/${channel.name.toLowerCase()}`} passHref legacyBehavior>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === channel.href}
+                      isActive={pathname === `/channels/${channel.name.toLowerCase()}`}
                     >
                       <a>
-                        <channel.icon className="mr-2 h-4 w-4" />
+                        <Hash className="mr-2 h-4 w-4" />
                         {channel.name}
                       </a>
                     </SidebarMenuButton>
@@ -95,7 +103,7 @@ export function AppSidebar() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <SidebarMenu>
-              {isLoading ? (
+              {isLoadingUsers ? (
                 <SidebarMenuItem>
                   <SidebarMenuButton disabled>
                     Loading users...

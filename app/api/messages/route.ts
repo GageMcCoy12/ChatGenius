@@ -5,53 +5,44 @@ import { pusherServer } from '@/lib/pusher';
 
 export async function POST(req: Request) {
   try {
-    console.log('POST /api/messages: Starting request');
-    
-    // Log auth attempt
-    console.log('POST /api/messages: Attempting authentication');
-    const authResult = await auth();
-    console.log('POST /api/messages: Auth result:', { userId: authResult.userId });
-    
-    const { userId } = authResult;
+    const { userId } = await auth();
     if (!userId) {
-      console.error('POST /api/messages: Unauthorized - No userId');
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Log request body parsing
-    const rawBody = await req.text();
-    console.log('POST /api/messages: Raw request body:', rawBody);
-    
-    let body;
-    try {
-      body = JSON.parse(rawBody);
-    } catch (e) {
-      console.error('POST /api/messages: JSON parse error:', e);
-      return new NextResponse('Invalid JSON body', { status: 400 });
-    }
-    
-    console.log('POST /api/messages: Parsed request body:', body);
-    
-    const { text, channelId, fileUrl } = body;
+    const { text, channelId, fileUrl } = await req.json();
+    console.log('Attempting to send message to channel:', { channelId, text });
 
     if (!text || !channelId) {
-      console.error('POST /api/messages: Missing fields:', { text, channelId });
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    // Log Pusher server state
-    console.log('POST /api/messages: Pusher server config:', {
-      hasAppId: !!process.env.PUSHER_APP_ID,
-      hasKey: !!process.env.PUSHER_KEY,
-      hasSecret: !!process.env.PUSHER_SECRET,
-      hasCluster: !!process.env.PUSHER_CLUSTER,
-    });
+    // Check if channel exists by name for non-DM channels
+    let channel;
+    if (!channelId.startsWith('dm-')) {
+      channel = await prisma.channel.findFirst({
+        where: {
+          name: channelId,
+        },
+      });
+    } else {
+      channel = await prisma.channel.findUnique({
+        where: { id: channelId },
+      });
+    }
 
-    console.log('POST /api/messages: Creating message');
+    if (!channel) {
+      console.error('Channel not found:', { channelId });
+      return new NextResponse('Channel not found', { status: 404 });
+    }
+
+    console.log('Found channel:', { channelId: channel.id, name: channel.name });
+
+    // Create the message
     const message = await prisma.message.create({
       data: {
         text,
-        channelId,
+        channelId: channel.id, // Use the actual channel ID
         userId,
         ...(fileUrl && {
           attachments: {
@@ -74,19 +65,10 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log('POST /api/messages: Message created, triggering Pusher');
-    await pusherServer.trigger(channelId, 'new-message', message);
-
-    console.log('POST /api/messages: Success');
+    await pusherServer.trigger(channel.id, 'new-message', message);
     return NextResponse.json(message);
   } catch (error) {
-    console.error('POST /api/messages: Error:', {
-      error,
-      name: error instanceof Error ? error.name : 'Unknown error type',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
+    console.error('POST MESSAGES ERROR:', error);
     return new NextResponse(
       error instanceof Error ? error.message : 'Internal Server Error',
       { status: 500 }
@@ -103,14 +85,36 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const channelId = searchParams.get('channelId');
+    console.log('Fetching messages for channel:', { channelId });
 
     if (!channelId) {
       return new NextResponse('Channel ID required', { status: 400 });
     }
 
+    // Check if channel exists by name for non-DM channels
+    let channel;
+    if (!channelId.startsWith('dm-')) {
+      channel = await prisma.channel.findFirst({
+        where: {
+          name: channelId,
+        },
+      });
+    } else {
+      channel = await prisma.channel.findUnique({
+        where: { id: channelId },
+      });
+    }
+
+    if (!channel) {
+      console.error('Channel not found:', { channelId });
+      return new NextResponse('Channel not found', { status: 404 });
+    }
+
+    console.log('Found channel:', { channelId: channel.id, name: channel.name });
+
     const messages = await prisma.message.findMany({
       where: {
-        channelId,
+        channelId: channel.id,
       },
       include: {
         user: true,

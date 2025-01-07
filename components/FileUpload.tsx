@@ -6,6 +6,7 @@ import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { FileIcon, X } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { z } from "zod";
 
 interface FileUploadProps {
   onChange: (url?: string) => void;
@@ -13,9 +14,7 @@ interface FileUploadProps {
   messageId: string;
 }
 
-type InputType = {
-  messageId: string;
-};
+const inputSchema = z.object({ messageId: z.string() });
 
 export const FileUpload = ({
   onChange,
@@ -65,7 +64,7 @@ export const FileUpload = ({
         <UploadButton<OurFileRouter, "messageAttachment">
           endpoint="messageAttachment"
           input={{ messageId }}
-          onUploadProgress={() => {
+          onUploadBegin={() => {
             setIsUploading(true);
           }}
           onClientUploadComplete={(res) => {

@@ -65,13 +65,13 @@ export function useMessages(channelId: string) {
     },
   });
 
-  // Update message reactions
-  const { mutateAsync: updateMessageReactions } = useMutation({
-    mutationFn: async ({ messageId, reactions }: { messageId: string; reactions: Message['reactions'] }) => {
-      const response = await fetch(`/api/messages/${messageId}/reactions`, {
+  // Update reactions mutation
+  const { mutateAsync: updateReactions } = useMutation({
+    mutationFn: async (params: { messageId: string, reactions: Message['reactions'] }) => {
+      const response = await fetch(`/api/messages/${params.messageId}/reactions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reactions }),
+        body: JSON.stringify({ reactions: params.reactions }),
       });
 
       if (!response.ok) {
@@ -80,6 +80,15 @@ export function useMessages(channelId: string) {
 
       return response.json();
     },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) =>
+        oldMessages.map(message =>
+          message.id === variables.messageId
+            ? { ...message, reactions: data.reactions }
+            : message
+        )
+      );
+    },
   });
 
   // Subscribe to real-time updates
@@ -87,19 +96,32 @@ export function useMessages(channelId: string) {
     if (!channelId) return;
 
     try {
-      const channel = pusherClient.subscribe(channelId);
+      // Get the actual channel ID from the server first
+      fetch(`/api/channels/resolve?channelId=${channelId}`)
+        .then(res => res.json())
+        .then(channel => {
+          if (!channel?.id) {
+            console.error('Could not resolve channel ID');
+            return;
+          }
 
-      channel.bind('new-message', (newMessage: Message) => {
-        queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) => [
-          ...oldMessages,
-          newMessage,
-        ]);
-      });
+          const pusherChannel = pusherClient.subscribe(channel.id);
 
-      return () => {
-        channel.unbind('new-message');
-        pusherClient.unsubscribe(channelId);
-      };
+          pusherChannel.bind('new-message', (newMessage: Message) => {
+            queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) => [
+              ...oldMessages,
+              newMessage,
+            ]);
+          });
+
+          return () => {
+            pusherChannel.unbind('new-message');
+            pusherClient.unsubscribe(channel.id);
+          };
+        })
+        .catch(error => {
+          console.error('Error resolving channel ID:', error);
+        });
     } catch (error) {
       console.error('Pusher subscription error:', error);
     }
@@ -110,7 +132,8 @@ export function useMessages(channelId: string) {
     loading: isLoading,
     error,
     sendMessage,
-    updateMessageReactions,
     refreshMessages: refetch,
+    updateReactions: (messageId: string, reactions: Message['reactions']) => 
+      updateReactions({ messageId, reactions }),
   };
 } 

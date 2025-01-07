@@ -10,7 +10,7 @@ import remarkGfm from 'remark-gfm';
 
 interface MessageListProps {
   messages: Message[];
-  onReactionsUpdate: (messageId: string, reactions: Message['reactions']) => void;
+  onReactionsUpdate?: (messageId: string, reactions: Message['reactions']) => void;
 }
 
 export const MessageList = ({ messages, onReactionsUpdate }: MessageListProps) => {
@@ -56,11 +56,13 @@ export const MessageList = ({ messages, onReactionsUpdate }: MessageListProps) =
                 ))}
               </div>
             )}
-            <MessageReactions 
-              messageId={message.id} 
-              initialReactions={message.reactions} 
-              onReactionsUpdate={onReactionsUpdate}
-            />
+            {onReactionsUpdate && (
+              <MessageReactions 
+                messageId={message.id} 
+                initialReactions={message.reactions} 
+                onReactionsUpdate={onReactionsUpdate}
+              />
+            )}
           </div>
         </div>
       ))}

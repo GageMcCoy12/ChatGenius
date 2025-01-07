@@ -1,10 +1,10 @@
 import { FileIcon, ImageIcon, Download } from "lucide-react";
 import Image from "next/image";
-import type { MessageAttachment as MessageAttachmentType } from "@/types/messages";
+import type { Attachment } from "@/types/messages";
 import { Button } from "@/components/ui/button";
 
 interface MessageAttachmentProps {
-  attachment: MessageAttachmentType;
+  attachment: Attachment;
 }
 
 export function MessageAttachment({ attachment }: MessageAttachmentProps) {

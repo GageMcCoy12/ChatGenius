@@ -1,29 +1,32 @@
-interface Reaction {
-  emoji: string;
-  _count: number;
+export interface User {
+  id: string;
+  username: string;
+  imageURL?: string;
 }
 
-export interface MessageAttachment {
+export interface Reaction {
   id: string;
-  messageId: string;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
+  emoji: string;
+  userId: string;
+  user: User;
+}
+
+export interface Attachment {
+  id: string;
   fileUrl: string;
-  createdAt: string;
+  fileType: string;
+  fileName: string;
+  fileSize: number;
 }
 
 export interface Message {
   id: string;
   text: string;
+  createdAt: string;
+  updatedAt: string;
   userId: string;
   channelId: string;
-  createdAt: string;
-  user: {
-    id: string;
-    username: string;
-    imageURL: string | null;
-  };
+  user: User;
   reactions: Reaction[];
-  attachments: MessageAttachment[];
+  attachments: Attachment[];
 } 

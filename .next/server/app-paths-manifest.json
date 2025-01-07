@@ -1,7 +1,10 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/messages/route": "app/api/messages/route.js",
-  "/api/uploadthing/route": "app/api/uploadthing/route.js",
   "/api/users/route": "app/api/users/route.js",
-  "/general/page": "app/general/page.js"
+  "/api/channels/route": "app/api/channels/route.js",
+  "/api/users/me/route": "app/api/users/me/route.js",
+  "/api/messages/route": "app/api/messages/route.js",
+  "/api/channels/resolve/route": "app/api/channels/resolve/route.js",
+  "/api/uploadthing/route": "app/api/uploadthing/route.js",
+  "/page": "app/page.js",
+  "/channels/[channelName]/page": "app/channels/[channelName]/page.js"
 }
