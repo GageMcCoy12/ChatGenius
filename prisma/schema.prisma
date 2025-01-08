@@ -31,16 +31,32 @@ model User {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  text      String
-  userId    String
-  channelId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  channel   Channel  @relation(fields: [channelId], references: [id])
-  reactions MessageReaction[]
+  id          String   @id @default(cuid())
+  text        String
+  fileUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  channelId   String
+  user        User     @relation(fields: [userId], references: [id])
+  channel     Channel  @relation(fields: [channelId], references: [id])
+  reactions   MessageReaction[]
   attachments MessageAttachment[]
+  
+  // Thread functionality
+  isThread    Boolean  @default(false)
+  replyCount  Int      @default(0)
+  lastReplyAt DateTime?
+  
+  // Reply relationships
+  replyToId   String?
+  replyTo     Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     Message[] @relation("Replies")
+
+  @@index([userId])
+  @@index([channelId])
+  @@index([replyToId])
+  @@index([isThread])
 }
 
 model MessageReaction {

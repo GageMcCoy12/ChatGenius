@@ -5,7 +5,7 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Message } from '@/types/messages';
 
 interface ChatProps {
@@ -24,27 +24,16 @@ interface LastSentMessage {
 
 export const Chat = ({ channelId }: ChatProps) => {
   const { messages, loading, error, sendMessage, refreshMessages, updateReactions } = useMessages(channelId);
-  const [lastMessage, setLastMessage] = useState<LastMessage | null>(null);
-  const [lastSentMessage, setLastSentMessage] = useState<LastSentMessage | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | undefined>(undefined);
 
-  const handleSendMessage = async (message: { text: string; fileUrl?: string }) => {
-    if (!message.text.trim() && !message.fileUrl) return;
-
-    // Prevent duplicate messages within 2 seconds
-    if (lastSentMessage && 
-        lastSentMessage.text === message.text && 
-        Date.now() - lastSentMessage.timestamp < 2000) {
-      return;
-    }
-
+  const handleSendMessage = async (message: { text: string; fileUrl?: string; replyToId?: string }) => {
     try {
-      setLastSentMessage({
-        text: message.text,
-        timestamp: Date.now()
-      });
-      
       return await sendMessage(message);
     } catch (error) {
+      if (error instanceof Error && error.message === 'Duplicate message') {
+        // Silently ignore duplicate messages
+        return;
+      }
       console.error('Failed to send message:', error);
       throw error;
     }
@@ -56,6 +45,10 @@ export const Chat = ({ channelId }: ChatProps) => {
     } catch (error) {
       console.error('Error updating reactions:', error);
     }
+  };
+
+  const handleReplyToMessage = (message: Message) => {
+    setReplyTo(message);
   };
 
   if (error) {
@@ -77,16 +70,18 @@ export const Chat = ({ channelId }: ChatProps) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] w-full relative">
-      <div className="flex-1 overflow-y-auto pb-[80px]">
+      <div className="flex-1 overflow-y-auto pb-[80px] w-full float-left">
         <MessageList 
           messages={messages}
-          onReactionsUpdate={handleReactionsUpdate}
+          isThread={false}
         />
       </div>
-      <div className="absolute bottom-0 left-0 right-0 bg-background">
+      <div className="absolute bottom-0 left-0 right-0 bg-background w-full">
         <MessageInput
           onSend={handleSendMessage}
           isLoading={loading}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(undefined)}
         />
       </div>
     </div>

@@ -1,82 +1,72 @@
-import { useUser } from '@clerk/nextjs';
+/**
+ * MessageList Component
+ * 
+ * Displays a list of messages in a chat interface with support for:
+ * - User avatars and names
+ * - Message timestamps
+ * - Message replies
+ * - File attachments
+ * - Emoji reactions
+ * - Reply functionality
+ * - Markdown formatting
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <MessageList
+ *   messages={messages}
+ *   onReactionsUpdate={handleReactionsUpdate}
+ *   onReplyToMessage={handleReplyToMessage}
+ * />
+ * ```
+ */
+
+'use client';
+
 import { Message } from '@/types/messages';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { format } from 'date-fns';
-import { MessageReactions } from './MessageReactions';
-import { MessageAttachment } from './MessageAttachment';
-import { PresenceIndicator } from './PresenceIndicator';
-import { useActiveUsers } from '@/hooks/use-active-users';
-import { UserCard } from './UserCard';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { MessageBubble } from '@/components/MessageBubble';
+import { useState } from 'react';
+import { MessageThread } from './MessageThread';
 
 interface MessageListProps {
   messages: Message[];
-  onReactionsUpdate?: (messageId: string, reactions: Message['reactions']) => void;
+  isThread?: boolean;
 }
 
-export const MessageList = ({ messages, onReactionsUpdate }: MessageListProps) => {
-  const { user } = useUser();
-  const { activeUsers } = useActiveUsers();
+export function MessageList({ messages, isThread = false }: MessageListProps) {
+  const [activeThread, setActiveThread] = useState<Message | null>(null);
+
+  const handleThreadClick = (message: Message) => {
+    if (!isThread) {
+      setActiveThread(message);
+    }
+  };
+
+  // Filter out thread messages from main chat
+  const filteredMessages = isThread 
+    ? messages 
+    : messages.filter(message => !message.isThread);
 
   return (
-    <div className="flex flex-col space-y-4 p-4 w-full">
-      {messages.map((message) => (
-        <div key={message.id} className="flex items-start gap-3 max-w-4xl mx-auto w-full">
-          <UserCard user={message.user}>
-            <div className="flex items-start gap-3">
-              <div className="relative cursor-pointer">
-                <Avatar className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
-                  <AvatarImage
-                    src={message.user.imageURL || '/default-avatar.png'}
-                    alt={message.user.username}
-                    className="h-full w-full object-cover"
-                  />
-                  <AvatarFallback>
-                    {message.user.username.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <PresenceIndicator isActive={activeUsers?.includes(message.userId)} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium hover:underline cursor-pointer">
-                    {message.user.username}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(message.createdAt), 'HH:mm')}
-                  </span>
-                </div>
-                {message.text && (
-                  <div className="rounded-lg px-4 py-2 bg-muted max-w-sm prose prose-sm dark:prose-invert">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.text}
-                    </ReactMarkdown>
-                  </div>
-                )}
-                {message.attachments.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    {message.attachments.map((attachment) => (
-                      <MessageAttachment 
-                        key={attachment.id} 
-                        attachment={attachment} 
-                      />
-                    ))}
-                  </div>
-                )}
-                {onReactionsUpdate && (
-                  <MessageReactions 
-                    messageId={message.id} 
-                    initialReactions={message.reactions} 
-                    onReactionsUpdate={onReactionsUpdate}
-                  />
-                )}
-              </div>
-            </div>
-          </UserCard>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="space-y-6 p-4">
+        {filteredMessages.map((message) => (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isThreadMessage={isThread}
+            onThreadClick={() => handleThreadClick(message)}
+          />
+        ))}
+      </div>
+
+      {activeThread && (
+        <MessageThread
+          parentMessage={activeThread}
+          onClose={() => setActiveThread(null)}
+          className="z-50"
+        />
+      )}
+    </>
   );
-}; 
+} 

@@ -60,7 +60,7 @@ export const FileUpload = ({
 
   return (
     <div className="flex items-center gap-4">
-      <div className="relative">
+      <div className="relative w-10 h-10 overflow-hidden">
         <UploadButton<OurFileRouter, "messageAttachment">
           endpoint="messageAttachment"
           input={{ messageId }}
@@ -79,7 +79,7 @@ export const FileUpload = ({
             toast.error('Failed to upload file');
             console.error(error);
           }}
-          className="ut-button:bg-transparent ut-button:border-0 ut-button:w-full ut-button:h-full ut-button:p-0 ut-button:m-0 ut-allowed-content:hidden ut-button:text-[0px]"
+          className="ut-button:bg-transparent ut-button:border-0 ut-button:w-10 ut-button:h-10 ut-button:p-0 ut-button:m-0 ut-allowed-content:hidden ut-button:text-[0px] ut-button:text-transparent ut-button:before:content-none ut-button:overflow-hidden"
         />
         {isUploading && (
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/50 rounded-md">
