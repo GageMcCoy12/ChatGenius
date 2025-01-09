@@ -60,8 +60,8 @@ export function Header({ channelName }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 left-[255px] right-0 bg-background border-b z-1">
-      <div className="flex h-16 items-center px-8">
+    <header className="fixed top-0 left-[255px] right-0 bg-background border-b z-50">
+      <div className="flex h-16 items-center px-8 bg-background">
         <h2 className="text-lg font-semibold">{getContextTitle()}</h2>
         <div className="flex-1 px-4">
           <SearchMessages />

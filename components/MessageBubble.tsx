@@ -9,6 +9,7 @@ import { UserCard } from './UserCard';
 import { Button } from './ui/button';
 import { MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useActiveUsers } from '@/hooks/use-active-users';
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,14 +23,21 @@ export function MessageBubble({
   onThreadClick 
 }: MessageBubbleProps) {
   const hasReplies = !isThreadMessage && message.replyCount > 0;
+  const { activeUsers } = useActiveUsers();
+  const isActive = activeUsers?.includes(message.user.id);
 
   return (
     <div className="group flex gap-4">
       <UserCard user={message.user}>
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={message.user.imageURL} />
-          <AvatarFallback>{message.user.username[0]}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={message.user.imageURL} />
+            <AvatarFallback>{message.user.username[0]}</AvatarFallback>
+          </Avatar>
+          {isActive && (
+            <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+          )}
+        </div>
       </UserCard>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -74,7 +82,12 @@ export function MessageBubble({
           </ReactMarkdown>
           {message.attachments?.map((attachment) => (
             <div key={attachment.id} className="mt-2">
-              <MessageAttachment fileUrl={attachment.fileUrl} />
+              <MessageAttachment 
+                fileUrl={attachment.fileUrl}
+                fileName={attachment.fileName}
+                fileSize={attachment.fileSize}
+                fileType={attachment.fileType}
+              />
             </div>
           ))}
         </div>

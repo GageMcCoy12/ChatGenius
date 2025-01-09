@@ -1,20 +1,9 @@
 {
   "pages": {
-    "/layout": [
+    "/api/messages/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
-    "/channels/[channelName]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/channels/[channelName]/page.js"
-    ],
-    "/api/channels/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/channels/route.js"
+      "static/chunks/app/api/messages/route.js"
     ],
     "/api/presence/route": [
       "static/chunks/webpack.js",
@@ -26,30 +15,36 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/route.js"
     ],
-    "/api/uploadthing/route": [
+    "/api/channels/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/uploadthing/route.js"
-    ],
-    "/api/messages/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/messages/route.js"
-    ],
-    "/api/channels/resolve/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/channels/resolve/route.js"
+      "static/chunks/app/api/channels/route.js"
     ],
     "/api/users/me/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/me/route.js"
     ],
-    "/dm/[userId]/page": [
+    "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dm/[userId]/page.js"
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
+    "/channels/[channelName]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/channels/[channelName]/page.js"
+    ],
+    "/api/uploadthing/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/uploadthing/route.js"
+    ],
+    "/api/channels/resolve/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/channels/resolve/route.js"
     ]
   }
 }

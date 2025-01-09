@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
-import { FileIcon, X } from "lucide-react";
+import { FileIcon, X, FileArchive, FileText, FileImage } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -16,40 +16,67 @@ interface FileUploadProps {
 
 const inputSchema = z.object({ messageId: z.string() });
 
+const getFileIcon = (fileType: string) => {
+  switch(fileType.toLowerCase()) {
+    case 'pdf':
+      return <FileText className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />;
+    case 'zip':
+    case 'rar':
+    case '7z':
+      return <FileArchive className="h-10 w-10 fill-blue-200 stroke-blue-400" />;
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+    case 'webp':
+      return <FileImage className="h-10 w-10 fill-green-200 stroke-green-400" />;
+    default:
+      return <FileIcon className="h-10 w-10 fill-gray-200 stroke-gray-400" />;
+  }
+};
+
+const getFileName = (url: string) => {
+  const parts = url.split('/');
+  return parts[parts.length - 1].split('?')[0];
+};
+
 export const FileUpload = ({
   onChange,
   value,
   messageId
 }: FileUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const fileType = value?.split('.').pop();
+  const fileType = value?.split('.').pop()?.toLowerCase();
+  const isImage = fileType && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileType);
 
   if (value && fileType) {
     return (
-      <div className="relative h-20 w-20">
-        {fileType === 'pdf' ? (
-          <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
-            <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
+      <div className="relative">
+        {isImage ? (
+          <div className="relative h-20 w-20">
+            <Image
+              fill
+              src={value}
+              alt="Upload"
+              className="rounded-md object-cover"
+            />
+          </div>
+        ) : (
+          <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10 max-w-xs">
+            {getFileIcon(fileType)}
             <a 
               href={value}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline"
+              className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline truncate"
             >
-              PDF File
+              {getFileName(value)}
             </a>
           </div>
-        ) : (
-          <Image
-            fill
-            src={value}
-            alt="Upload"
-            className="rounded-full"
-          />
         )}
         <button
           onClick={() => onChange("")}
-          className="bg-rose-500 text-white p-1 rounded-full absolute top-0 right-0 shadow-sm"
+          className="bg-rose-500 text-white p-1 rounded-full absolute -top-2 -right-2 shadow-sm"
           type="button"
         >
           <X className="h-4 w-4" />

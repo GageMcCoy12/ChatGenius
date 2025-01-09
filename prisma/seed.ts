@@ -13,8 +13,6 @@ async function main() {
       permissions: ['READ', 'WRITE'],
     },
   })
-
-  console.log({ defaultRole })
 }
 
 main()

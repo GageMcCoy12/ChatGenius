@@ -69,8 +69,8 @@ export const Chat = ({ channelId }: ChatProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] w-full relative">
-      <div className="flex-1 overflow-y-auto pb-[80px] w-full float-left">
+    <div className="absolute top-16 flex-col h-[calc(100vh-64px)] w-full relative">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-[120px] w-full">
         <MessageList 
           messages={messages}
           isThread={false}

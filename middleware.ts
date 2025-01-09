@@ -1,9 +1,6 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
 import { getOrCreateUser } from '@/lib/user'
 
-// Debug log to check if env is loaded
-console.log('CLERK_SECRET_KEY exists:', !!process.env.CLERK_SECRET_KEY);
-
 export default clerkMiddleware();
 
 export const config = {

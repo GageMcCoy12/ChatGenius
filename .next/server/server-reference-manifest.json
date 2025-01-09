@@ -5,15 +5,10 @@
         "app/channels/[channelName]/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
           "async": false
-        },
-        "app/dm/[userId]/page": {
-          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
-          "async": false
         }
       },
       "layer": {
-        "app/channels/[channelName]/page": "action-browser",
-        "app/dm/[userId]/page": "action-browser"
+        "app/channels/[channelName]/page": "action-browser"
       }
     },
     "7f18186a9a5228c2b3ca97560cf6b77dad14900562": {
@@ -21,15 +16,10 @@
         "app/channels/[channelName]/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
           "async": false
-        },
-        "app/dm/[userId]/page": {
-          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
-          "async": false
         }
       },
       "layer": {
-        "app/channels/[channelName]/page": "action-browser",
-        "app/dm/[userId]/page": "action-browser"
+        "app/channels/[channelName]/page": "action-browser"
       }
     },
     "7fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb": {
@@ -37,15 +27,10 @@
         "app/channels/[channelName]/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
           "async": false
-        },
-        "app/dm/[userId]/page": {
-          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fkeyless-actions.js%22%2C%5B%5B%227f0c07c86deb23aa5b217a9bdfd05334a150badb2a%22%2C%22createOrReadKeylessAction%22%5D%2C%5B%227f18186a9a5228c2b3ca97560cf6b77dad14900562%22%2C%22syncKeylessConfigAction%22%5D%5D%5D%2C%5B%22%2FUsers%2Fgagemccoy%2FDocuments%2FChatGenius%2Fnode_modules%2F%40clerk%2Fnextjs%2Fdist%2Fesm%2Fapp-router%2Fserver-actions.js%22%2C%5B%5B%227fd1bd5ba5d899b24234a9b237f34a9a9dec666fbb%22%2C%22invalidateCacheAction%22%5D%5D%5D%5D&__client_imported__=true!",
-          "async": false
         }
       },
       "layer": {
-        "app/channels/[channelName]/page": "action-browser",
-        "app/dm/[userId]/page": "action-browser"
+        "app/channels/[channelName]/page": "action-browser"
       }
     }
   },

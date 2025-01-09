@@ -110,36 +110,42 @@ export function useMessages(channelId: string) {
   useEffect(() => {
     if (!channelId) return;
 
-    try {
-      // Get the actual channel ID from the server first
-      fetch(`/api/channels/resolve?channelId=${channelId}`)
-        .then(res => res.json())
-        .then(channel => {
-          if (!channel?.id) {
-            console.error('Could not resolve channel ID');
-            return;
-          }
+    let pusherChannel: any;
+    const cleanup = () => {
+      if (pusherChannel) {
+        pusherChannel.unbind('new-message');
+        pusherClient.unsubscribe(channelId);
+      }
+    };
 
-          const pusherChannel = pusherClient.subscribe(channel.id);
+    // Get the actual channel ID from the server first
+    fetch(`/api/channels/resolve?channelId=${channelId}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to resolve channel: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(channel => {
+        if (!channel?.id) {
+          throw new Error('Could not resolve channel ID');
+        }
 
-          pusherChannel.bind('new-message', (newMessage: Message) => {
-            queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) => [
-              ...oldMessages,
-              newMessage,
-            ]);
-          });
+        pusherChannel = pusherClient.subscribe(channel.id);
 
-          return () => {
-            pusherChannel.unbind('new-message');
-            pusherClient.unsubscribe(channel.id);
-          };
-        })
-        .catch(error => {
-          console.error('Error resolving channel ID:', error);
+        pusherChannel.bind('new-message', (newMessage: Message) => {
+          queryClient.setQueryData(['messages', channelId], (oldMessages: Message[] = []) => [
+            ...oldMessages,
+            newMessage,
+          ]);
         });
-    } catch (error) {
-      console.error('Pusher subscription error:', error);
-    }
+      })
+      .catch(error => {
+        console.error('Error in real-time updates:', error);
+        // Optionally show a toast or notification to the user
+      });
+
+    return cleanup;
   }, [channelId, queryClient]);
 
   return {

@@ -15,6 +15,7 @@ export const ourFileRouter = {
   messageAttachment: f({
     image: { maxFileSize: "8MB", maxFileCount: 1 },
     pdf: { maxFileSize: "8MB", maxFileCount: 1 },
+    blob: { maxFileSize: "16MB", maxFileCount: 1 },
   })
     .input(z.object({ messageId: z.string() }))
     .middleware(async ({ input }) => {
