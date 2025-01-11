@@ -17,7 +17,6 @@ interface CurrentSidebarContentProps {
  * Displays the sidebar content including:
  * - Workspace name
  * - Channels list with add button and navigation
- * - Direct messages list
  * Each channel has a three-dot menu for notifications
  * 
  * @component
@@ -29,7 +28,7 @@ export function CurrentSidebarContent({
   const params = useParams()
   const currentChannel = params?.channelId as string
   
-  const [expandedSections, setExpandedSections] = React.useState<string[]>(["Channels", "Direct Messages"])
+  const [expandedSections, setExpandedSections] = React.useState<string[]>(["Channels"])
   const [activeMenu, setActiveMenu] = React.useState<string | null>(null)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = React.useState(false)
 

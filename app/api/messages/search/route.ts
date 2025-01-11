@@ -4,74 +4,43 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const MessageSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-  createdAt: z.date(),
-  channelId: z.string(),
-  channel: z.object({
-    id: z.string(),
-    name: z.string(),
-  }),
-  user: z.object({
-    username: z.string(),
-  }),
+  query: z.string().min(1),
+  channelId: z.string().optional(),
 });
 
-type PrismaMessage = z.infer<typeof MessageSchema>;
-
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.userId;
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const query = searchParams.get('q');
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('query');
+    const channelId = searchParams.get('channelId');
 
     if (!query) {
-      return NextResponse.json([]);
+      return NextResponse.json({ resultCount: 0, results: [] });
     }
+
+    const validatedParams = MessageSchema.parse({ query, channelId });
 
     const messages = await prisma.message.findMany({
       where: {
         content: {
-          contains: query,
+          contains: validatedParams.query,
           mode: 'insensitive',
         },
-        OR: [
-          {
-            // Messages in public channels
-            channel: {
-              name: {
-                not: {
-                  startsWith: 'dm-'
-                }
-              }
-            }
-          },
-          {
-            // Messages in DM channels where user has access
-            channel: {
-              members: {
-                some: {
-                  userId
-                }
-              }
-            }
-          }
-        ]
+        ...(validatedParams.channelId ? {
+          channelId: validatedParams.channelId
+        } : {}),
       },
       include: {
+        channel: true,
         user: {
           select: {
             username: true,
-          },
-        },
-        channel: {
-          select: {
-            id: true,
-            name: true,
           },
         },
       },
@@ -81,24 +50,14 @@ export async function GET(req: Request) {
       take: 10,
     });
 
-    console.log('Search results:', { 
-      query,
+    return NextResponse.json({
       resultCount: messages.length,
-      results: messages.map(m => ({ content: m.content, channel: m.channel.name }))
+      results: messages.map(m => ({
+        content: m.content,
+        channel: m.channel.name,
+        username: m.user.username,
+      })),
     });
-
-    const results = messages.map(m => ({ 
-      content: m.content, 
-      channel: m.channel.name,
-      id: m.id,
-      createdAt: m.createdAt,
-      channelId: m.channelId,
-      user: {
-        username: m.user.username
-      }
-    }));
-
-    return NextResponse.json(results);
   } catch (error) {
     console.error('SEARCH MESSAGES ERROR:', error);
     return new NextResponse('Internal Error', { status: 500 });
