@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const MessageSchema = z.object({
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
     const messages = await prisma.message.findMany({
       where: {
-        text: {
+        content: {
           contains: query,
           mode: 'insensitive',
         },
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
           {
             // Messages in DM channels where user has access
             channel: {
-              access: {
+              members: {
                 some: {
                   userId
                 }
@@ -84,11 +84,11 @@ export async function GET(req: Request) {
     console.log('Search results:', { 
       query,
       resultCount: messages.length,
-      results: messages.map((m: typeof messages[0]) => ({ text: m.text, channel: m.channel.name }))
+      results: messages.map(m => ({ content: m.content, channel: m.channel.name }))
     });
 
-    const results = messages.map((m: typeof messages[0]) => ({ 
-      text: m.text, 
+    const results = messages.map(m => ({ 
+      content: m.content, 
       channel: m.channel.name,
       id: m.id,
       createdAt: m.createdAt,

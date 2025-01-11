@@ -1,0 +1,34 @@
+{
+  "family": "chatgenius-gm",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::474668398195:role/chatgenius-gm-task-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "chatgenius-gm",
+      "image": "474668398195.dkr.ecr.us-east-1.amazonaws.com/chatgenius-gm:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/chatgenius-gm",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512"
+} 

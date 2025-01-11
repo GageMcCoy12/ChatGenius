@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db'
+import { prisma } from '../src/lib/prisma'
 import { auth, getAuth } from '@clerk/nextjs/server'
 
 export async function getOrCreateUser() {
@@ -31,8 +31,8 @@ export async function getOrCreateUser() {
         id: userId,
         email: clerkUser.email_addresses[0].email_address,
         username: clerkUser.username || clerkUser.email_addresses[0].email_address.split('@')[0],
-        imageURL: clerkUser.image_url,
-        roleId: 1, // Default role ID for new users
+        imageUrl: clerkUser.image_url,
+        roleId: "1",
       }
     })
   }

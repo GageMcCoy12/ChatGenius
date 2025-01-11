@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db';
-import { pusherServer } from '@/lib/pusher';
+import { prisma } from '@/lib/prisma';
+import { wsClient } from '../../../../../src/lib/aws-config';
+import { PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
+import type { Connection } from '@prisma/client';
 
 export async function PUT(
   req: Request,
@@ -14,49 +16,62 @@ export async function PUT(
     }
 
     const { reactions } = await req.json();
-    const messageId = params.messageId;
+    const { messageId } = params;
 
-    // Get the message to check if it exists and get its channelId
-    const message = await prisma.message.findUnique({
-      where: { id: messageId },
-      include: { reactions: true },
-    });
-
-    if (!message) {
-      return new NextResponse('Message not found', { status: 404 });
-    }
-
-    // Delete existing reactions for this message
-    await prisma.messageReaction.deleteMany({
-      where: { messageId },
-    });
-
-    // Create new reactions
-    const updatedMessage = await prisma.message.update({
+    const message = await prisma.message.update({
       where: { id: messageId },
       data: {
         reactions: {
-          create: reactions.map((reaction: any) => ({
+          deleteMany: {},
+          create: reactions.map((reaction: { emoji: string; userId: string }) => ({
             emoji: reaction.emoji,
             userId: reaction.userId,
           })),
         },
       },
       include: {
-        reactions: {
-          include: {
-            user: true,
-          },
-        },
+        reactions: true,
       },
     });
 
-    // Trigger real-time update
-    await pusherServer.trigger(message.channelId, 'message-updated', updatedMessage);
+    // Get all connections for users in the channel
+    const channelUsers = await prisma.channel.findUnique({
+      where: { id: message.channelId },
+      include: { members: true },
+    });
 
-    return NextResponse.json(updatedMessage);
+    if (channelUsers) {
+      const connections = await prisma.connection.findMany({
+        where: {
+          userId: {
+            in: channelUsers.members.map(m => m.userId),
+          },
+        },
+      });
+
+      // Send the updated message to all connected users
+      await Promise.all(
+        connections.map(async (conn: Connection) => {
+          try {
+            await wsClient?.send(
+              new PostToConnectionCommand({
+                ConnectionId: conn.connectionId,
+                Data: Buffer.from(JSON.stringify({
+                  action: 'message-updated',
+                  data: message,
+                })),
+              })
+            );
+          } catch (error) {
+            console.error(`Failed to send to connection ${conn.connectionId}:`, error);
+          }
+        })
+      );
+    }
+
+    return NextResponse.json(message);
   } catch (error) {
-    console.error('UPDATE REACTIONS ERROR:', error);
+    console.error('[MESSAGE_REACTIONS]', error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 } 

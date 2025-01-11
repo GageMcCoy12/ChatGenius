@@ -1,0 +1,1 @@
+const { PrismaClient } = require("@prisma/client"); const prisma = new PrismaClient(); async function main() { const messages = await prisma.message.findMany({ where: { channelId: "cm5rkd4g70000bxcxcpmg0cus" }, include: { user: true } }); console.log(JSON.stringify(messages, null, 2)); } main().then(() => prisma.$disconnect());

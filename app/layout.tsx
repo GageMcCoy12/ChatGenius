@@ -1,12 +1,10 @@
-import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from 'sonner'
-import { QueryProvider } from '@/providers/query-provider'
-import { AppSidebar } from '@/components/Sidebar'
-import { HeaderWrapper } from '@/components/HeaderWrapper'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { QueryProvider } from '../src/providers/query-provider'
+import { ThemeProvider } from 'next-themes'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,22 +20,21 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <QueryProvider>
-        <html lang="en">
-          <body className={inter.className}>
-            <SidebarProvider>
-              <div className="flex min-h-svh">
-                <AppSidebar />
-                <div className="flex-1">
-                  <HeaderWrapper />
-                  {children}
-                </div>
-              </div>
-            </SidebarProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={inter.className}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              {children}
+            </QueryProvider>
             <Toaster />
-          </body>
-        </html>
-      </QueryProvider>
+          </ThemeProvider>
+        </body>
+      </html>
     </ClerkProvider>
   )
 }

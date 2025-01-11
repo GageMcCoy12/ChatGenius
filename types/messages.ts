@@ -21,39 +21,34 @@ export interface Attachment {
 
 export interface Message {
   id: string;
-  text: string;
+  content: string;
   fileUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
   channelId: string;
+  replyToId?: string;
+  replyCount?: number;
+  lastReplyAt?: Date;
+  reactions?: MessageReaction[];
+  replies?: Message[];
   user: {
     id: string;
     username: string;
-    imageURL?: string;
+    imageUrl: string | null;
+    isOnline: boolean;
   };
-  reactions: MessageReaction[];
-  attachments: MessageAttachment[];
-  
-  // Thread functionality
-  isThread: boolean;
-  replyCount: number;
-  lastReplyAt?: Date;
-  
-  // Reply relationships
-  replyToId?: string;
-  replyTo?: Message;
-  replies?: Message[];
 }
 
 export interface MessageReaction {
   id: string;
   emoji: string;
-  userId: string;
   messageId: string;
+  userId: string;
   user: {
     id: string;
     username: string;
+    imageUrl: string | null;
   };
 }
 

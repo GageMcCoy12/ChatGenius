@@ -1,6 +1,7 @@
 {
-  "/api/users/me/route": "app/api/users/me/route.js",
-  "/api/users/route": "app/api/users/route.js",
   "/api/channels/route": "app/api/channels/route.js",
-  "/channels/[channelName]/page": "app/channels/[channelName]/page.js"
+  "/api/channels/messages/route": "app/api/channels/messages/route.js",
+  "/api/channels/resolve/route": "app/api/channels/resolve/route.js",
+  "/api/channels/messages/send/route": "app/api/channels/messages/send/route.js",
+  "/channels/[channelId]/page": "app/channels/[channelId]/page.js"
 }

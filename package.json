@@ -13,6 +13,11 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.726.1",
+    "@aws-sdk/client-s3": "^3.726.1",
+    "@aws-sdk/client-sso": "^3.726.0",
+    "@aws-sdk/client-sso-oidc": "^3.726.0",
+    "@aws-sdk/s3-presigned-post": "^3.726.1",
     "@clerk/clerk-sdk-node": "^5.1.4",
     "@clerk/nextjs": "^6.9.6",
     "@clerk/themes": "^2.2.3",
@@ -48,8 +53,8 @@
     "@radix-ui/react-toggle": "^1.1.1",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@smithy/smithy-client": "^4.1.0",
     "@tanstack/react-query": "^5.62.16",
-    "@uploadthing/react": "^7.1.5",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
@@ -61,9 +66,8 @@
     "lucide-react": "^0.454.0",
     "next": "^15.1.4",
     "next-themes": "^0.4.4",
+    "node-fetch": "^3.3.2",
     "prisma": "^6.1.0",
-    "pusher": "^5.2.0",
-    "pusher-js": "^8.4.0-rc2",
     "react": "^18.3.1",
     "react-day-picker": "8.10.1",
     "react-dom": "^18.3.1",
@@ -75,20 +79,20 @@
     "remark-gfm": "^4.0.0",
     "sonner": "^1.7.1",
     "svix": "^1.45.1",
-    "tailwind-merge": "^2.5.5",
+    "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "uploadthing": "^7.4.4",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
-    "@types/node": "^22",
+    "@types/node": "^22.10.5",
     "@types/react": "^19.0.3",
     "@types/react-dom": "^19",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5.7.3"
   }
 }

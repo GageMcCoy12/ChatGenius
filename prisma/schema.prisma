@@ -7,100 +7,81 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model UserRole {
-  id          Int      @id @default(autoincrement())
-  name        String
-  permissions String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  users       User[]
+model User {
+  id          String          @id
+  username    String          @unique
+  email       String          @unique
+  imageUrl    String?
+  isOnline    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  roleId      String
+  channels    ChannelMember[]
+  connections Connection[]
+  messages    Message[]
+  reactions   Reaction[]
+  role        Role            @relation(fields: [roleId], references: [id])
 }
 
-model User {
-  id           String         @id
-  username     String
-  email        String
-  imageURL     String?
-  roleId       Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  role         UserRole       @relation(fields: [roleId], references: [id])
-  messages     Message[]
-  channelAccess ChannelAccess[]
-  reactions    MessageReaction[]
+model Channel {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  members   ChannelMember[]
+  messages  Message[]
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  userId    String
+  channelId String
+  createdAt DateTime @default(now())
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, channelId])
 }
 
 model Message {
-  id          String   @id @default(cuid())
-  text        String
-  fileUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String     @id @default(cuid())
+  content     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   userId      String
   channelId   String
-  user        User     @relation(fields: [userId], references: [id])
-  channel     Channel  @relation(fields: [channelId], references: [id])
-  reactions   MessageReaction[]
-  attachments MessageAttachment[]
-  
-  // Thread functionality
-  isThread    Boolean  @default(false)
-  replyCount  Int      @default(0)
-  lastReplyAt DateTime?
-  
-  // Reply relationships
   replyToId   String?
-  replyTo     Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies     Message[] @relation("Replies")
-
-  @@index([userId])
-  @@index([channelId])
-  @@index([replyToId])
-  @@index([isThread])
+  threadCount Int        @default(0)
+  channel     Channel    @relation(fields: [channelId], references: [id])
+  replyTo     Message?   @relation("ThreadMessages", fields: [replyToId], references: [id])
+  replies     Message[]  @relation("ThreadMessages")
+  user        User       @relation(fields: [userId], references: [id])
+  reactions   Reaction[]
 }
 
-model MessageReaction {
+model Reaction {
   id        String   @id @default(cuid())
   emoji     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    String
   messageId String
-  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@unique([userId, messageId, emoji])
 }
 
-model ChannelAccess {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  channelId String
-  role      String   @default("member")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  channel   Channel  @relation(fields: [channelId], references: [id])
+model Connection {
+  id           String   @id @default(cuid())
+  connectionId String   @unique
+  userId       String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
 }
 
-model Channel {
-  id          String         @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  messages    Message[]
-  access      ChannelAccess[]
+model Role {
+  id    String @id @default(cuid())
+  name  String
+  users User[]
 }
-
-model MessageAttachment {
-  id        String   @id @default(cuid())
-  messageId String
-  fileName  String
-  fileType  String
-  fileSize  Int
-  fileUrl   String
-  createdAt DateTime @default(now())
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@index([messageId])
-} 
