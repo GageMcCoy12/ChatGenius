@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Channel } from "../../types/channels"
+import { Channel } from "../types/channels"
 
 export function useChannels() {
   const queryClient = useQueryClient()
