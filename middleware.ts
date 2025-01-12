@@ -1,13 +1,34 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
-import { getOrCreateUser } from '@/lib/user'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-export default clerkMiddleware();
+// Public routes that don't require authentication
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks/(.*)'
+])
+
+export default clerkMiddleware(async (auth, request) => {
+  // Log all requests to see what's hitting the middleware
+  console.log('🔒 Middleware processing:', request.method, request.url);
+
+  if (!isPublicRoute(request)) {
+    const { userId } = await auth.protect()
+    console.log('👤 Protected route accessed by:', userId);
+  } else {
+    console.log('🔓 Public route accessed');
+  }
+})
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public files)
+     * - webhooks (webhook endpoints)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public|webhooks).*)',
   ],
 }

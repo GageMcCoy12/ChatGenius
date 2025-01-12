@@ -43,6 +43,16 @@ export async function POST() {
       return NextResponse.json(existingUser);
     }
 
+    // Ensure default role exists
+    const defaultRole = await prisma.role.upsert({
+      where: { id: '1' },
+      update: {},
+      create: {
+        id: '1',
+        name: 'user'
+      }
+    });
+
     // Generate unique username
     const baseUsername = user.username || user.emailAddresses[0].emailAddress.split('@')[0];
     const uniqueUsername = await generateUniqueUsername(baseUsername);
@@ -55,27 +65,30 @@ export async function POST() {
         username: uniqueUsername,
         imageUrl: user.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
         isOnline: true,
-        roleId: "1", // Default role ID
+        roleId: defaultRole.id,
       },
     });
 
-    // Find the team-updates channel
-    const channel = await prisma.channel.findFirst({
-      where: { name: 'team-updates' }
+    // Find or create the team-updates channel
+    const channel = await prisma.channel.upsert({
+      where: { name: 'team-updates' },
+      update: {},
+      create: {
+        name: 'team-updates',
+      }
     });
 
-    if (channel) {
-      // Add user to the team-updates channel
-      await prisma.channelMember.create({
-        data: {
-          userId: newUser.id,
-          channelId: channel.id,
-        }
-      });
-    }
+    // Add user to the team-updates channel
+    await prisma.channelMember.create({
+      data: {
+        userId: newUser.id,
+        channelId: channel.id,
+      }
+    });
 
     return NextResponse.json(newUser);
   } catch (error: any) {
+    console.error('User creation error:', error);
     const errorDetails = {
       name: error?.name || 'Unknown Error',
       message: error?.message || 'An unknown error occurred',

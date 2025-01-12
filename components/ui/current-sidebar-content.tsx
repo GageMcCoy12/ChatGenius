@@ -1,10 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 import { ChevronDown, ChevronRight, MoreVertical, Bell, BellOff, Plus } from "lucide-react"
 import { ModalCreateChannel } from "../ui/modal-create-channel"
-import { useChannels } from "../../src/hooks/use-channels"
+import { useChannels } from "@/hooks/use-channels"
 import { useRouter, useParams } from "next/navigation"
 
 interface CurrentSidebarContentProps {

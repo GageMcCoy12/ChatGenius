@@ -1,13 +1,94 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
-import { User, Reply, SmilePlus } from "lucide-react"
-import { Message } from "@/types/messages"
+import { cn } from "../../lib/utils"
+import { User as UserIcon, Reply, SmilePlus, FileIcon, ImageIcon, VideoIcon, Music2Icon, FileTextIcon } from "lucide-react"
+import { Message, User, Reaction } from "@prisma/client"
 import { format } from "date-fns"
 
+interface MessageWithDetails extends Message {
+  user: User;
+  reactions: Reaction[];
+  fileUrl: string | null;
+  fileName: string | null;
+  fileType: string | null;
+}
+
 interface CurrentMessageProps {
-  message: Message
+  message: MessageWithDetails;
+}
+
+function formatMessageContent(content: string) {
+  return content
+    // Bold
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/_(.*?)_/g, '<em>$1</em>')
+    // Underline
+    .replace(/__(.*?)__/g, '<span class="underline">$1</span>')
+}
+
+function FileAttachment({ fileUrl, fileName, fileType }: { fileUrl: string, fileName: string, fileType: string }) {
+  let Icon = FileIcon
+  let preview = null
+
+  if (fileType.startsWith('image/')) {
+    Icon = ImageIcon
+    preview = (
+      <div className="mt-2 max-w-sm">
+        <img 
+          src={fileUrl} 
+          alt={fileName}
+          className="rounded-md max-h-48 object-cover hover:opacity-90 transition-opacity cursor-pointer"
+          onClick={() => window.open(fileUrl, '_blank')}
+        />
+      </div>
+    )
+  } else if (fileType.startsWith('video/')) {
+    Icon = VideoIcon
+    preview = (
+      <div className="mt-2 max-w-sm">
+        <video 
+          src={fileUrl}
+          controls
+          className="rounded-md max-h-48 w-full"
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    )
+  } else if (fileType.startsWith('audio/')) {
+    Icon = Music2Icon
+    preview = (
+      <div className="mt-2 max-w-sm w-full">
+        <audio 
+          src={fileUrl}
+          controls
+          className="w-full"
+        >
+          Your browser does not support the audio tag.
+        </audio>
+      </div>
+    )
+  } else if (fileType.includes('pdf') || fileType.includes('doc')) {
+    Icon = FileTextIcon
+  }
+
+  return (
+    <div className="mt-2">
+      <a 
+        href={fileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 text-[#8ba3d4] hover:text-[#7691c7] transition-colors"
+        download={fileName}
+      >
+        <Icon className="h-4 w-4" />
+        <span className="text-sm underline">{fileName}</span>
+      </a>
+      {preview}
+    </div>
+  )
 }
 
 export function CurrentMessage({
@@ -26,7 +107,7 @@ export function CurrentMessage({
             />
           ) : (
             <div className="h-8 w-8 rounded-full bg-[#242b3d] flex items-center justify-center">
-              <User className="h-4 w-4 text-[#8ba3d4]" />
+              <UserIcon className="h-4 w-4 text-[#8ba3d4]" />
             </div>
           )}
         </div>
@@ -42,7 +123,19 @@ export function CurrentMessage({
           </div>
 
           {/* Content */}
-          <p className="text-[#8ba3d4] mt-1">{message.content}</p>
+          <p 
+            className="text-zinc-200 break-words"
+            dangerouslySetInnerHTML={{ __html: formatMessageContent(message.content) }}
+          />
+
+          {/* File Attachment */}
+          {message.fileUrl && message.fileName && message.fileType && (
+            <FileAttachment 
+              fileUrl={message.fileUrl}
+              fileName={message.fileName}
+              fileType={message.fileType}
+            />
+          )}
 
           {/* Actions and Reactions */}
           <div className="flex items-center gap-4 mt-1">

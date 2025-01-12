@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 import { Search, User } from "lucide-react"
 import { CurrentProfileCard } from "./current-profile-card"
 import { useUser, SignInButton } from "@clerk/nextjs"

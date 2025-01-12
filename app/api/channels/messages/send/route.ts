@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { auth } from '@clerk/nextjs/server'
 
 export async function POST(
@@ -18,7 +18,7 @@ export async function POST(
       return new NextResponse("Missing required fields", { status: 400 })
     }
 
-    const message = await db.message.create({
+    const message = await prisma.message.create({
       data: {
         content,
         channelId,

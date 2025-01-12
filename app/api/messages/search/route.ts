@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       resultCount: messages.length,
-      results: messages.map(m => ({
+      results: messages.map((m: any) => ({
         content: m.content,
         channel: m.channel.name,
         username: m.user.username,

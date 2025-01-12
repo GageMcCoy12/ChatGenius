@@ -46,6 +46,9 @@ model ChannelMember {
 model Message {
   id          String     @id @default(cuid())
   content     String     @default("Message content unavailable")
+  fileUrl     String?    // URL of the uploaded file in S3
+  fileName    String?    // Original name of the file
+  fileType    String?    // MIME type of the file
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   userId      String

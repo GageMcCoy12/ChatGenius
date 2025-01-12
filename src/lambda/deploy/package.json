@@ -1,8 +1,0 @@
-{
-  "name": "chatgenius-websocket-server",
-  "version": "1.0.0",
-  "description": "WebSocket server for ChatGenius",
-  "dependencies": {
-    "ws": "^8.13.0"
-  }
-} 

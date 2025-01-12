@@ -1,4 +1,4 @@
-import { prisma } from '../src/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { auth, getAuth } from '@clerk/nextjs/server'
 
 export async function getOrCreateUser() {

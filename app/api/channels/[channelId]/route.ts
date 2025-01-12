@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { auth } from '@clerk/nextjs/server'
 
 export async function GET(
@@ -12,7 +12,7 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const channel = await db.channel.findUnique({
+    const channel = await prisma.channel.findUnique({
       where: { id: params.channelId },
       select: { id: true, name: true }
     });

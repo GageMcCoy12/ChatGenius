@@ -14,7 +14,7 @@ export function Chat({ channelId }: ChatProps) {
     <div className="flex flex-col h-full">
       <CurrentHeader sidebarCollapsed={isCollapsed} />
       <CurrentMessageList channelId={channelId} sidebarCollapsed={isCollapsed} />
-      <CurrentMessageInput sidebarCollapsed={isCollapsed} />
+      <CurrentMessageInput channelId={channelId} sidebarCollapsed={isCollapsed} />
     </div>
   )
 } 
