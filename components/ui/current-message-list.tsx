@@ -7,6 +7,8 @@ import { usePusher } from "@/hooks/usePusher"
 import { CurrentMessage } from "./current-message"
 import { cn } from "@/lib/utils"
 import type { PusherMessage } from "@/lib/services/pusher-service"
+import { useUser } from "@clerk/nextjs"
+import { toast } from "sonner"
 
 interface MessageWithDetails extends Message {
   user: User;
@@ -28,6 +30,7 @@ export function CurrentMessageList({
   const bottomRef = useRef<HTMLDivElement>(null)
   const { isConnected, subscribe, subscribeToChannel } = usePusher()
   const queryClient = useQueryClient()
+  const { user } = useUser()
 
   const { 
     data,
@@ -105,6 +108,104 @@ export function CurrentMessageList({
     };
   }, [isConnected, channelId, subscribe, subscribeToChannel, queryClient]);
 
+  const handleReactionAdd = async (messageId: string, emoji: string) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch('/api/messages/reactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messageId,
+          emoji,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to add reaction');
+
+      // Optimistically update the UI
+      queryClient.setQueryData(['messages', channelId], (oldData: any) => {
+        if (!oldData?.pages) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            messages: page.messages.map((msg: MessageWithDetails) => {
+              if (msg.id === messageId) {
+                return {
+                  ...msg,
+                  reactions: [
+                    ...msg.reactions,
+                    {
+                      id: `temp-${Date.now()}`,
+                      emoji,
+                      messageId,
+                      userId: user.id,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  ],
+                };
+              }
+              return msg;
+            }),
+          })),
+        };
+      });
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+      toast.error('Failed to add reaction');
+    }
+  };
+
+  const handleReactionRemove = async (messageId: string, emoji: string) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch('/api/messages/reactions', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messageId,
+          emoji,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to remove reaction');
+
+      // Optimistically update the UI
+      queryClient.setQueryData(['messages', channelId], (oldData: any) => {
+        if (!oldData?.pages) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            messages: page.messages.map((msg: MessageWithDetails) => {
+              if (msg.id === messageId) {
+                return {
+                  ...msg,
+                  reactions: msg.reactions.filter(
+                    (r) => !(r.userId === user.id && r.emoji === emoji)
+                  ),
+                };
+              }
+              return msg;
+            }),
+          })),
+        };
+      });
+    } catch (error) {
+      console.error('Failed to remove reaction:', error);
+      toast.error('Failed to remove reaction');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={cn(
@@ -144,6 +245,8 @@ export function CurrentMessageList({
             <CurrentMessage
               key={message.id}
               message={message}
+              onReactionAdd={handleReactionAdd}
+              onReactionRemove={handleReactionRemove}
             />
           ) : null
         ))}

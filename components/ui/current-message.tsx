@@ -5,6 +5,8 @@ import { cn } from "../../lib/utils"
 import { User as UserIcon, Reply, SmilePlus, FileIcon, ImageIcon, VideoIcon, Music2Icon, FileTextIcon } from "lucide-react"
 import { Message, User, Reaction } from "@prisma/client"
 import { format } from "date-fns"
+import { EmojiPicker } from "./emoji-picker"
+import { useUser } from "@clerk/nextjs"
 
 interface MessageWithDetails extends Message {
   user: User;
@@ -16,6 +18,8 @@ interface MessageWithDetails extends Message {
 
 interface CurrentMessageProps {
   message: MessageWithDetails;
+  onReactionAdd?: (messageId: string, emoji: string) => void;
+  onReactionRemove?: (messageId: string, emoji: string) => void;
 }
 
 function formatMessageContent(content: string) {
@@ -93,7 +97,38 @@ function FileAttachment({ fileUrl, fileName, fileType }: { fileUrl: string, file
 
 export function CurrentMessage({
   message,
+  onReactionAdd,
+  onReactionRemove
 }: CurrentMessageProps) {
+  const { user: currentUser } = useUser();
+  const [groupedReactions, setGroupedReactions] = React.useState<{ [key: string]: string[] }>({});
+
+  React.useEffect(() => {
+    // Group reactions by emoji
+    const grouped = message.reactions.reduce((acc, reaction) => {
+      if (!acc[reaction.emoji]) {
+        acc[reaction.emoji] = [];
+      }
+      acc[reaction.emoji].push(reaction.userId);
+      return acc;
+    }, {} as { [key: string]: string[] });
+    setGroupedReactions(grouped);
+  }, [message.reactions]);
+
+  const handleEmojiSelect = async (emoji: string) => {
+    if (!currentUser?.id || !onReactionAdd) return;
+
+    const hasReacted = message.reactions.some(
+      (reaction) => reaction.userId === currentUser.id && reaction.emoji === emoji
+    );
+
+    if (hasReacted && onReactionRemove) {
+      onReactionRemove(message.id, emoji);
+    } else {
+      onReactionAdd(message.id, emoji);
+    }
+  };
+
   return (
     <div className="group hover:bg-[#1f2437] w-full pl-4 pr-8 py-2 transition-colors">
       <div className="flex gap-3 max-w-[800px]">
@@ -140,22 +175,21 @@ export function CurrentMessage({
           {/* Actions and Reactions */}
           <div className="flex items-center gap-4 mt-1">
             {/* Reactions */}
-            <div className="flex items-center gap-1">
-              {(message.reactions || []).map((reaction) => (
+            <div className="flex items-center gap-1 flex-wrap">
+              {Object.entries(groupedReactions).map(([emoji, userIds]) => (
                 <button
-                  key={reaction.id}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#242b3d] text-[#8ba3d4]"
+                  key={emoji}
+                  onClick={() => handleEmojiSelect(emoji)}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#242b3d] hover:bg-[#2a324a] transition-colors",
+                    userIds.includes(currentUser?.id || "") ? "text-[#8ba3d4]" : "text-[#566388]"
+                  )}
                 >
-                  <span>{reaction.emoji}</span>
-                  <span>1</span>
+                  <span>{emoji}</span>
+                  <span>{userIds.length}</span>
                 </button>
               ))}
-              <button
-                className="p-1 rounded-full hover:bg-[#242b3d] text-[#566388] hover:text-[#8ba3d4] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Add reaction"
-              >
-                <SmilePlus className="h-3 w-3" />
-              </button>
+              <EmojiPicker onEmojiSelect={handleEmojiSelect} />
             </div>
 
             {/* Reply */}
