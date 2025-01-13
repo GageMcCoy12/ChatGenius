@@ -35,8 +35,37 @@ export class PusherService {
       throw new Error('Pusher configuration missing');
     }
 
+    console.log('🔄 Initializing Pusher with:', {
+      key: process.env.NEXT_PUBLIC_PUSHER_KEY,
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    });
+
     this.pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+      authEndpoint: '/api/pusher/auth',
+      auth: {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+      enabledTransports: ['ws', 'wss'],
+    });
+
+    // Add connection event listeners
+    this.pusher.connection.bind('connecting', () => {
+      console.log('🔄 Pusher connecting...');
+    });
+
+    this.pusher.connection.bind('connected', () => {
+      console.log('✅ Pusher connected with socket ID:', this.pusher.connection.socket_id);
+    });
+
+    this.pusher.connection.bind('disconnected', () => {
+      console.log('❌ Pusher disconnected');
+    });
+
+    this.pusher.connection.bind('error', (error: any) => {
+      console.error('❌ Pusher connection error:', error);
     });
   }
 
@@ -49,13 +78,24 @@ export class PusherService {
       return;
     }
 
-    console.log(`📡 Subscribing to channel: ${channelId}`);
-    const channel = this.pusher.subscribe(`presence-channel-${channelId}`);
+    const channelName = `channel-${channelId}`;
+    
+    console.log(`📡 Subscribing to channel: ${channelName}`);
+    const channel = this.pusher.subscribe(channelName);
+
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log(`✅ Successfully subscribed to ${channelName}`);
+    });
+
+    channel.bind('pusher:subscription_error', (error: any) => {
+      console.error(`❌ Error subscribing to ${channelName}:`, error);
+    });
+
     this.channels.set(channelId, channel);
 
     // Bind to message events
     channel.bind('message', (data: any) => {
-      console.log('📥 Received message:', data);
+      console.log(`📥 Received message on ${channelName}:`, data);
       this.handleMessage({
         type: 'message',
         channelId,
@@ -88,7 +128,7 @@ export class PusherService {
     const channel = this.channels.get(channelId);
     if (channel) {
       console.log(`Unsubscribing from channel: ${channelId}`);
-      this.pusher.unsubscribe(`presence-channel-${channelId}`);
+      this.pusher.unsubscribe(`channel-${channelId}`);
       this.channels.delete(channelId);
     }
   }

@@ -76,13 +76,25 @@ export function CurrentMessageList({
       // Update message cache
       queryClient.setQueryData(['messages', channelId], (oldData: any) => {
         if (!oldData?.pages?.[0]) {
-          console.log('❌ No existing messages found in cache');
+          console.log('❌ No existing messages found in cache, invalidating query');
+          // If no cache exists, trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
           return oldData;
         }
 
         // The message data is already in the correct format from the server
         const newMessage = message.message;
         console.log('✨ Adding new message to cache:', newMessage);
+
+        // Check if message already exists to prevent duplicates
+        const messageExists = oldData.pages.some((page: any) => 
+          page.messages.some((msg: any) => msg.id === newMessage.id)
+        );
+
+        if (messageExists) {
+          console.log('⚠️ Message already exists in cache, skipping');
+          return oldData;
+        }
 
         const newPages = [...oldData.pages];
         newPages[0] = {
@@ -97,7 +109,12 @@ export function CurrentMessageList({
       });
 
       // Scroll to bottom
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (bottomRef.current) {
+        const shouldAutoScroll = isNearBottom();
+        if (shouldAutoScroll) {
+          bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
     };
 
     // Subscribe to messages
@@ -109,6 +126,18 @@ export function CurrentMessageList({
       unsubscribe();
     };
   }, [isConnected, channelId, subscribe, subscribeToChannel, queryClient]);
+
+  // Add isNearBottom helper function
+  const isNearBottom = () => {
+    if (!bottomRef.current) return false;
+    
+    const threshold = 100; // pixels from bottom
+    const container = bottomRef.current.parentElement?.parentElement;
+    if (!container) return false;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    return scrollHeight - (scrollTop + clientHeight) < threshold;
+  };
 
   const handleReactionAdd = async (messageId: string, emoji: string) => {
     if (!user?.id) return;

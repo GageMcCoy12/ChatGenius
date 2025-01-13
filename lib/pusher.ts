@@ -13,20 +13,27 @@ export const pusher = new PusherServer({
   useTLS: true,
 });
 
+const getChannelName = (channelId: string) => {
+  return `channel-${channelId}`;
+};
+
 export async function broadcastMessage(channelId: string, message: any) {
   try {
-    await pusher.trigger(`presence-channel-${channelId}`, 'message', message);
-    console.log('Message broadcasted:', { channelId, message });
+    const channelName = getChannelName(channelId);
+    console.log('🚀 Broadcasting to channel:', channelName);
+    await pusher.trigger(channelName, 'message', message);
+    console.log('✅ Message broadcasted successfully:', message);
   } catch (error) {
-    console.error('Failed to broadcast message:', error);
+    console.error('❌ Failed to broadcast message:', error);
     throw error;
   }
 }
 
 export async function broadcastChannelCreated(channelId: string, channel: any) {
   try {
-    await pusher.trigger(`presence-channel-${channelId}`, 'channel-created', channel);
-    console.log('Channel created event broadcasted:', { channelId, channel });
+    const channelName = getChannelName(channelId);
+    await pusher.trigger(channelName, 'channel-created', channel);
+    console.log('Channel created event broadcasted:', { channelName, channel });
   } catch (error) {
     console.error('Failed to broadcast channel created event:', error);
     throw error;
@@ -35,8 +42,9 @@ export async function broadcastChannelCreated(channelId: string, channel: any) {
 
 export async function broadcastChannelUpdated(channelId: string, channel: any) {
   try {
-    await pusher.trigger(`presence-channel-${channelId}`, 'channel-updated', channel);
-    console.log('Channel updated event broadcasted:', { channelId, channel });
+    const channelName = getChannelName(channelId);
+    await pusher.trigger(channelName, 'channel-updated', channel);
+    console.log('Channel updated event broadcasted:', { channelName, channel });
   } catch (error) {
     console.error('Failed to broadcast channel updated event:', error);
     throw error;

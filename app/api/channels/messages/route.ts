@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { broadcastMessage } from '@/lib/pusher'
 
 export async function POST(req: Request) {
   try {
@@ -45,9 +46,19 @@ export async function POST(req: Request) {
       })
     }
 
+    // Broadcast the message through Pusher
+    console.log('📢 Broadcasting message:', message);
+    await broadcastMessage(channelId, message);
+    console.log('✅ Message broadcasted successfully');
+
     return NextResponse.json(message)
   } catch (error) {
-    console.error("[MESSAGES_POST]", error)
+    // Safely log the error
+    console.error("[MESSAGES_POST] Error:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      name: error instanceof Error ? error.name : "Unknown",
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

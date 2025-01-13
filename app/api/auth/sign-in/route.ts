@@ -21,12 +21,16 @@ export async function POST() {
     console.log('👤 Clerk user found:', user.id)
 
     // Get or create default role
-    const defaultRole = await prisma.role.findFirst({
-      where: { name: 'user' }
-    }) || await prisma.role.create({
-      data: { name: 'user' }
+    console.log('🎭 Finding or creating default role...')
+    const defaultRole = await prisma.role.upsert({
+      where: { id: '1' },
+      update: {},
+      create: {
+        id: '1',
+        name: 'user'
+      }
     })
-    console.log('👑 User role:', defaultRole.name)
+    console.log('👑 User role created/found:', defaultRole)
 
     // Ensure we have an email
     const primaryEmail = user.emailAddresses[0]?.emailAddress
@@ -34,8 +38,10 @@ export async function POST() {
       console.error('❌ No email address found for user')
       return new NextResponse('Email address required', { status: 400 })
     }
+    console.log('📧 User email:', primaryEmail)
 
     // Sync user with database
+    console.log('🔄 Syncing user with database...')
     const dbUser = await prisma.user.upsert({
       where: { id: userId },
       create: {
@@ -53,7 +59,52 @@ export async function POST() {
         isOnline: true,
       }
     })
-    console.log('✅ User synchronized with database:', dbUser.id)
+    console.log('✅ User synchronized with database:', dbUser)
+
+    // Add user to default channels
+    console.log('📢 Adding user to default channels...')
+    const defaultChannels = await prisma.channel.findMany({
+      where: {
+        name: {
+          in: ['general', 'team-updates']
+        }
+      }
+    })
+
+    // Create default channels if they don't exist
+    if (defaultChannels.length === 0) {
+      console.log('🆕 Creating default channels...')
+      for (const channelName of ['general', 'team-updates']) {
+        const channel = await prisma.channel.create({
+          data: {
+            name: channelName,
+            members: {
+              create: [
+                { userId: dbUser.id }
+              ]
+            }
+          }
+        })
+        console.log(`✅ Created channel: ${channelName}`)
+      }
+    } else {
+      // Add user to existing default channels
+      console.log('➕ Adding user to existing default channels...')
+      for (const channel of defaultChannels) {
+        await prisma.channelMember.create({
+          data: {
+            userId: dbUser.id,
+            channelId: channel.id
+          }
+        }).catch(error => {
+          // Ignore if user is already a member
+          if (!error.code?.includes('P2002')) {
+            throw error
+          }
+        })
+        console.log(`✅ Added user to channel: ${channel.name}`)
+      }
+    }
 
     return NextResponse.json({ 
       user: dbUser,
