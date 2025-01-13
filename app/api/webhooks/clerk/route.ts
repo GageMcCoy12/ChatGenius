@@ -54,6 +54,17 @@ export async function POST(req: Request) {
 
         console.log('👤 User data:', JSON.stringify(userData, null, 2));
 
+        // Ensure default role exists
+        const defaultRole = await prisma.role.upsert({
+          where: { id: "1" },
+          create: {
+            id: "1",
+            name: "user"
+          },
+          update: {}
+        });
+        console.log('👑 Default role:', defaultRole);
+
         // Upsert user to handle both new users and sessions
         const user = await prisma.user.upsert({
           where: { id: userData.id },

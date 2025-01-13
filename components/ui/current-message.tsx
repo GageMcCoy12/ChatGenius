@@ -7,6 +7,7 @@ import { Message, User, Reaction } from "@prisma/client"
 import { format } from "date-fns"
 import { EmojiPicker } from "./emoji-picker"
 import { useUser } from "@clerk/nextjs"
+import { StatusIndicator } from "./status-indicator"
 
 interface MessageWithDetails extends Message {
   user: User;
@@ -148,13 +149,20 @@ export function CurrentMessage({
     )}>
       <div className="flex gap-3 max-w-[800px]">
         {/* Profile Picture */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative">
           {message.user.imageUrl ? (
-            <img
-              src={message.user.imageUrl}
-              alt={`${message.user.username}'s profile`}
-              className="h-8 w-8 rounded-full"
-            />
+            <>
+              <img
+                src={message.user.imageUrl}
+                alt={`${message.user.username}'s profile`}
+                className="h-8 w-8 rounded-full"
+              />
+              <StatusIndicator 
+                status={message.user.status}
+                isOnline={message.user.isOnline}
+                className="relative -top-2 -right-4.1 h-3 w-3"
+              />
+            </>
           ) : (
             <div className="h-8 w-8 rounded-full bg-[#242b3d] flex items-center justify-center">
               <UserIcon className="h-4 w-4 text-[#8ba3d4]" />
