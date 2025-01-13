@@ -50,27 +50,7 @@ export async function GET(req: Request) {
     const { userId } = await auth();
     if (!userId) return new NextResponse('Unauthorized', { status: 401 });
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        channels: {
-          include: {
-            channel: true
-          }
-        }
-      }
-    });
-
-    if (!user) return new NextResponse('User not found', { status: 404 });
-
     const channels = await prisma.channel.findMany({
-      where: {
-        members: {
-          some: {
-            userId
-          }
-        }
-      },
       include: {
         members: {
           include: {

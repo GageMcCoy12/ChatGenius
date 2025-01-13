@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       return new NextResponse('Missing svix headers', { status: 400 });
     }
 
-    const wh = new Webhook(process.env.CLERK_SECRET_KEY || '');
+    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
     let evt: WebhookEvent;
 
     try {
@@ -44,76 +44,85 @@ export async function POST(req: Request) {
 
     console.log(`🎯 Processing ${evt.type} event`);
 
-    // Handle both user.created and session.created events
-    if (evt.type === 'user.created' || evt.type === 'session.created') {
+    // Handle user.created event
+    if (evt.type === 'user.created') {
       try {
-        // Get user data based on event type
-        const userData = evt.type === 'user.created' 
-          ? evt.data 
-          : (evt.data as any).user;
-
+        const userData = evt.data;
         console.log('👤 User data:', JSON.stringify(userData, null, 2));
 
-        // Ensure default role exists
-        const defaultRole = await prisma.role.upsert({
-          where: { id: "1" },
-          create: {
-            id: "1",
-            name: "user"
-          },
-          update: {}
-        });
-        console.log('👑 Default role:', defaultRole);
-
-        // Upsert user to handle both new users and sessions
-        const user = await prisma.user.upsert({
-          where: { id: userData.id },
-          create: {
-            id: userData.id,
-            email: userData.email_addresses[0].email_address,
-            username: userData.username || userData.email_addresses[0].email_address.split('@')[0],
-            imageUrl: userData.image_url,
-            isOnline: true,
-            roleId: "1",
-          },
-          update: {
-            isOnline: true,
-            email: userData.email_addresses[0].email_address,
-            username: userData.username || undefined,
-            imageUrl: userData.image_url || undefined,
-          },
-        });
-        console.log('💾 User upserted:', user);
-
-        // For new users (user.created), add them to team-updates channel
-        if (evt.type === 'user.created') {
-          console.log('🔍 Looking for team-updates channel');
-          const channel = await prisma.channel.findFirst({
-            where: { name: 'team-updates' }
-          });
-
-          if (channel) {
-            console.log('📢 Adding user to team-updates channel');
-            const member = await prisma.channelMember.create({
-              data: {
-                userId: user.id,
-                channelId: channel.id,
-              }
-            });
-            console.log('✨ Added to channel:', member);
-          }
+        // Test database connection
+        try {
+          await prisma.$connect();
+          console.log('✅ Database connection successful');
+        } catch (error) {
+          console.error('❌ Database connection failed:', error);
+          return new NextResponse('Database connection failed', { status: 500 });
         }
 
-        return new NextResponse(`User ${evt.type === 'user.created' ? 'created' : 'updated'}`, { status: 200 });
+        // Ensure default role exists
+        try {
+          const defaultRole = await prisma.role.upsert({
+            where: { id: '1' },
+            create: {
+              id: '1',
+              name: 'user'
+            },
+            update: {}
+          });
+          console.log('👑 Default role:', defaultRole);
+        } catch (error) {
+          console.error('❌ Error creating default role:', error);
+          return new NextResponse('Error creating default role', { status: 500 });
+        }
+
+        // Create user in database
+        try {
+          const user = await prisma.user.create({
+            data: {
+              id: userData.id,
+              email: userData.email_addresses[0]?.email_address,
+              username: userData.username || userData.email_addresses[0]?.email_address?.split('@')[0],
+              imageUrl: userData.image_url,
+              isOnline: true,
+              status: "DEFAULT",
+              roleId: '1'
+            }
+          });
+          console.log('💾 User created:', user);
+
+          // Add user to default channels
+          const defaultChannels = await prisma.channel.findMany({
+            where: {
+              name: {
+                in: ['general', 'team-updates']
+              }
+            }
+          });
+
+          for (const channel of defaultChannels) {
+            await prisma.channelMember.create({
+              data: {
+                userId: user.id,
+                channelId: channel.id
+              }
+            });
+            console.log(`📢 Added user to channel: ${channel.name}`);
+          }
+
+          return NextResponse.json({ success: true });
+        } catch (error) {
+          console.error('❌ Error creating user:', error);
+          return new NextResponse('Error creating user', { status: 500 });
+        }
       } catch (error) {
-        console.error('❌ Database error:', error);
-        return new NextResponse('Database error', { status: 500 });
+        console.error('❌ Error processing user.created event:', error);
+        return new NextResponse('Error processing user.created event', { status: 500 });
       }
     }
 
-    return new NextResponse('Webhook received', { status: 200 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('❌ Webhook handler error:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('❌ Webhook error:', error);
+    return new NextResponse('Webhook error', { status: 500 });
   }
 } 
