@@ -20,6 +20,9 @@ interface CurrentMessageProps {
   message: MessageWithDetails;
   onReactionAdd?: (messageId: string, emoji: string) => void;
   onReactionRemove?: (messageId: string, emoji: string) => void;
+  isThreadParent?: boolean;
+  isThreadReply?: boolean;
+  onThreadOpen?: (message: MessageWithDetails) => void;
 }
 
 function formatMessageContent(content: string) {
@@ -98,7 +101,10 @@ function FileAttachment({ fileUrl, fileName, fileType }: { fileUrl: string, file
 export function CurrentMessage({
   message,
   onReactionAdd,
-  onReactionRemove
+  onReactionRemove,
+  isThreadParent = false,
+  isThreadReply = false,
+  onThreadOpen
 }: CurrentMessageProps) {
   const { user: currentUser } = useUser();
   const [groupedReactions, setGroupedReactions] = React.useState<{ [key: string]: string[] }>({});
@@ -129,8 +135,17 @@ export function CurrentMessage({
     }
   };
 
+  const handleThreadOpen = () => {
+    if (onThreadOpen) {
+      onThreadOpen(message);
+    }
+  };
+
   return (
-    <div className="group hover:bg-[#1f2437] w-full pl-4 pr-8 py-2 transition-colors">
+    <div className={cn(
+      "group hover:bg-[#1f2437] w-full pl-4 pr-8 py-2 transition-colors",
+      isThreadReply && "pl-8"
+    )}>
       <div className="flex gap-3 max-w-[800px]">
         {/* Profile Picture */}
         <div className="flex-shrink-0">
@@ -193,20 +208,29 @@ export function CurrentMessage({
             </div>
 
             {/* Reply */}
-            <div className="flex items-center gap-2">
-              <button
-                className="flex items-center gap-1 text-xs text-[#566388] hover:text-[#8ba3d4] opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Reply to message"
-              >
-                <Reply className="h-3 w-3" />
-                <span>Reply</span>
-              </button>
-              {message.threadCount > 0 && (
-                <span className="text-xs text-[#566388]">
-                  {message.threadCount} {message.threadCount === 1 ? "reply" : "replies"}
-                </span>
-              )}
-            </div>
+            {!isThreadReply && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleThreadOpen}
+                  className="flex items-center gap-1 text-xs text-[#566388] hover:text-[#8ba3d4] opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Reply to message"
+                >
+                  <Reply className="h-3 w-3" />
+                  <span>Reply</span>
+                </button>
+                {message.threadCount > 0 && (
+                  <button
+                    onClick={handleThreadOpen}
+                    className={cn(
+                      "text-xs hover:text-[#8ba3d4] transition-colors",
+                      isThreadParent ? "text-[#8ba3d4]" : "text-[#566388]"
+                    )}
+                  >
+                    {message.threadCount} {message.threadCount === 1 ? "reply" : "replies"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

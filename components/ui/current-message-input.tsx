@@ -13,8 +13,10 @@ import { useUploadThing } from "@/lib/uploadthing"
 import { useToast } from "@/components/ui/use-toast"
 
 interface CurrentMessageInputProps {
-  sidebarCollapsed: boolean
-  channelId: string
+  sidebarCollapsed?: boolean;
+  channelId: string;
+  replyToId?: string;
+  placeholder?: string;
 }
 
 interface ImagePreview {
@@ -42,8 +44,10 @@ function formatMessageContent(content: string) {
 }
 
 export function CurrentMessageInput({
-  sidebarCollapsed,
-  channelId
+  sidebarCollapsed = false,
+  channelId,
+  replyToId,
+  placeholder = "Type a message..."
 }: CurrentMessageInputProps) {
   const router = useRouter()
   const { user } = useUser()
@@ -115,6 +119,8 @@ export function CurrentMessageInput({
       });
       return;
     }
+
+    console.log("Submitting message with replyToId:", replyToId);
     
     // Ensure we have the complete file information before sending
     if (selectedImage && !selectedImage.url) {
@@ -130,12 +136,15 @@ export function CurrentMessageInput({
       const payload = {
         content: content.trim(),
         channelId,
+        replyToId,
         ...(selectedImage && selectedImage.url && { 
           fileUrl: selectedImage.url,
           fileName: selectedImage.name,
           fileType: selectedImage.type
         })
       };
+
+      console.log("Sending payload:", payload);
 
       const response = await fetch("/api/channels/messages", {
         method: "POST",
@@ -156,9 +165,15 @@ export function CurrentMessageInput({
       setContent("");
       setSelectedImage(null);
       
-      await queryClient.invalidateQueries({
-        queryKey: ['messages', channelId]
-      });
+      // Invalidate both channel messages and thread messages
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['messages', channelId]
+        }),
+        replyToId && queryClient.invalidateQueries({
+          queryKey: ['thread', replyToId]
+        })
+      ]);
     } catch (error) {
       toast({
         title: "Failed to send message",
@@ -217,11 +232,12 @@ export function CurrentMessageInput({
     <form 
       onSubmit={onSubmit}
       className={cn(
-        "fixed bottom-0 p-4 bg-[#1e2330] border-t border-[#242b3d]",
-        sidebarCollapsed ? "left-2 right-0" : "left-[20%] right-0"
+        "bg-[#1e2330] border-t border-[#242b3d]",
+        !replyToId && "fixed bottom-0 p-4",
+        !replyToId && (sidebarCollapsed ? "left-2 right-0" : "left-[20%] right-0")
       )}
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 bg-[#1e2330]">
         {selectedImage && (
           <div className="relative w-48 h-48 mx-2">
             <Image
@@ -241,7 +257,7 @@ export function CurrentMessageInput({
             </Button>
           </div>
         )}
-        <div className="flex items-center gap-2 px-2">
+        <div className="flex items-center gap-2 px-2 bg-[#1e2330]">
           <Button
             type="button"
             variant="ghost"
@@ -269,41 +285,35 @@ export function CurrentMessageInput({
           >
             <Underline className="h-4 w-4" />
           </Button>
-          <div className="relative">
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+              onChange={handleFileUpload}
+            />
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
-              onClick={() => document.getElementById('image-upload')?.click()}
+              asChild
             >
-              <Upload className="h-4 w-4" />
+              <span>
+                <Upload className="h-4 w-4" />
+              </span>
             </Button>
-            <input
-              id="image-upload"
-              type="file"
-              className="hidden"
-              accept="image/*,video/*,application/pdf"
-              onChange={handleFileUpload}
-            />
-          </div>
+          </label>
         </div>
-        <div className="relative">
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={onKeyDown}
-            rows={3}
-            placeholder="Send a message..."
-            className="resize-none pr-12 bg-zinc-800/50 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200"
-          />
-          <div className="absolute top-1 right-2">
-            <Button type="submit" size="sm" variant="ghost">
-              Send
-            </Button>
-          </div>
-        </div>
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          rows={3}
+          className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
+        />
       </div>
     </form>
   )

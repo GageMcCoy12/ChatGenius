@@ -19,13 +19,15 @@ interface MessageWithDetails extends Message {
 }
 
 interface CurrentMessageListProps {
-  sidebarCollapsed: boolean
-  channelId: string
+  sidebarCollapsed: boolean;
+  channelId: string;
+  onThreadOpen?: (message: MessageWithDetails) => void;
 }
 
 export function CurrentMessageList({
   sidebarCollapsed,
-  channelId
+  channelId,
+  onThreadOpen
 }: CurrentMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const { isConnected, subscribe, subscribeToChannel } = usePusher()
@@ -247,11 +249,12 @@ export function CurrentMessageList({
               message={message}
               onReactionAdd={handleReactionAdd}
               onReactionRemove={handleReactionRemove}
+              onThreadOpen={onThreadOpen}
             />
           ) : null
         ))}
+        <div ref={bottomRef} />
       </div>
-      <div ref={bottomRef} className="h-4" />
     </div>
   )
 } 

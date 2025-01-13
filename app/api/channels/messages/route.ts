@@ -11,7 +11,7 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const { content, channelId, fileUrl, fileName, fileType } = await req.json()
+    const { content, channelId, replyToId, fileUrl, fileName, fileType } = await req.json()
     if (!channelId) {
       return new NextResponse("Channel ID missing", { status: 400 })
     }
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         content: content || "Message content unavailable",
         channelId,
         userId,
+        replyToId,
         ...(fileUrl && {
           fileUrl,
           fileName: fileName || "Uploaded file",
@@ -33,8 +34,16 @@ export async function POST(req: Request) {
       },
       include: {
         user: true,
+        reactions: true,
       }
     })
+
+    if (replyToId) {
+      await prisma.message.update({
+        where: { id: replyToId },
+        data: { threadCount: { increment: 1 } }
+      })
+    }
 
     return NextResponse.json(message)
   } catch (error) {
@@ -69,6 +78,7 @@ export async function GET(req: Request) {
         },
         where: {
           channelId,
+          replyToId: null
         },
         include: {
           user: true,
@@ -83,6 +93,7 @@ export async function GET(req: Request) {
         take: limit,
         where: {
           channelId,
+          replyToId: null
         },
         include: {
           user: true,
