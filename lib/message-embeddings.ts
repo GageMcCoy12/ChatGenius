@@ -22,44 +22,63 @@ async function get3072Embeddings(texts: string[]): Promise<number[][]> {
 }
 
 export async function syncMessagesToVectorDB() {
-  // Fetch all messages from Postgres
-  const messages = await prisma.message.findMany({
-    include: {
-      user: true,
-      channel: true,
-    },
-  });
+  console.log("Starting message sync to vector database...");
 
-  console.log(`Processing ${messages.length} messages for embedding...`);
-
-  // Process messages in batches to avoid rate limits
-  const batchSize = 100;
-  for (let i = 0; i < messages.length; i += batchSize) {
-    const batch = messages.slice(i, i + batchSize);
-    
-    // Just use the message content for embeddings
-    const texts = batch.map(message => message.content);
-
-    // Create embeddings
-    const vectorEmbeddings = await get3072Embeddings(texts);
-
-    // Prepare vectors for Pinecone
-    const vectors = batch.map((message, idx) => ({
-      id: message.id,
-      values: vectorEmbeddings[idx],
-      metadata: {
-        content: message.content,
-        channelName: message.channel.name,
-        senderName: message.user.username,
-        createdAt: message.createdAt.toISOString()
+  try {
+    // Get all messages from non-DM channels
+    const messages = await prisma.message.findMany({
+      where: {
+        NOT: {
+          channel: {
+            id: {
+              startsWith: 'dm-'
+            }
+          }
+        }
       },
-    }));
+      include: {
+        channel: true,
+        user: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
 
-    // Upsert vectors to Pinecone
-    await pineconeIndex.upsert(vectors);
+    // Process messages in batches of 100 to avoid rate limits
+    const batchSize = 100;
+    for (let i = 0; i < messages.length; i += batchSize) {
+      const batch = messages.slice(i, i + batchSize);
+      
+      // Prepare texts for embedding
+      const texts = batch.map(message => message.content);
+      
+      // Create embeddings
+      const embeddings = await get3072Embeddings(texts);
+      
+      // Prepare vectors for Pinecone
+      const vectors = embeddings.map((embedding, idx) => ({
+        id: batch[idx].id,
+        values: embedding,
+        metadata: {
+          content: batch[idx].content,
+          channelId: batch[idx].channelId,
+          channelName: batch[idx].channel.name,
+          senderId: batch[idx].userId,
+          senderName: batch[idx].user.username,
+          createdAt: batch[idx].createdAt.toISOString()
+        }
+      }));
 
-    console.log(`Processed batch ${i / batchSize + 1}`);
+      // Upsert vectors to Pinecone
+      await pineconeIndex.upsert(vectors);
+      
+      console.log(`Processed ${i + batch.length} of ${messages.length} messages`);
+    }
+
+    console.log("Successfully synced messages to vector database");
+  } catch (error) {
+    console.error("Error syncing messages:", error);
+    throw error;
   }
-
-  console.log('Finished syncing messages to vector database');
 } 

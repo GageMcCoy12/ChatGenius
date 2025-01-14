@@ -11,11 +11,14 @@ import { Bold, Italic, Underline, Upload, X } from "lucide-react"
 import Image from "next/image"
 import { useUploadThing } from "@/lib/uploadthing"
 import { useToast } from "@/components/ui/use-toast"
+import * as React from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Switch } from "./switch"
 
 interface CurrentMessageInputProps {
-  sidebarCollapsed?: boolean;
+  sidebarCollapsed: boolean;
   channelId: string;
-  replyToId?: string;
+  replyId?: string;
   placeholder?: string;
 }
 
@@ -44,18 +47,33 @@ function formatMessageContent(content: string) {
 }
 
 export function CurrentMessageInput({
-  sidebarCollapsed = false,
+  sidebarCollapsed,
   channelId,
-  replyToId,
+  replyId,
   placeholder = "Type a message..."
 }: CurrentMessageInputProps) {
   const router = useRouter()
   const { user } = useUser()
   const [content, setContent] = useState("")
   const [selectedImage, setSelectedImage] = useState<ImagePreview | null>(null)
+  const [isAIEnabled, setIsAIEnabled] = React.useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  
+  // Get other user's name if this is a DM channel
+  const { data: channel } = useQuery({
+    queryKey: ['channel', channelId],
+    queryFn: async () => {
+      const response = await fetch(`/api/channels/resolve?channelId=${channelId}`)
+      if (!response.ok) throw new Error('Failed to fetch channel')
+      return response.json()
+    }
+  })
+
+  const isDM = channelId.startsWith('dm-')
+  const otherUserName = isDM ? channel?.name.split(', ').find((name: string) => name !== channel?.currentUserName) : null
+
   const { startUpload, isUploading } = useUploadThing("messageAttachment", {
     onClientUploadComplete: (res) => {
       if (!res?.[0]) return;
@@ -100,89 +118,6 @@ export function CurrentMessageInput({
     startUpload([file]);
   };
 
-  const removeSelectedImage = () => {
-    if (selectedImage?.previewUrl) {
-      URL.revokeObjectURL(selectedImage.previewUrl);
-    }
-    setSelectedImage(null);
-  };
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    if ((!content.trim() && !selectedImage) || !user) return;
-    if (isUploading) {
-      toast({
-        title: "Please wait",
-        description: "File is still uploading...",
-        variant: "default",
-      });
-      return;
-    }
-
-    console.log("Submitting message with replyToId:", replyToId);
-    
-    // Ensure we have the complete file information before sending
-    if (selectedImage && !selectedImage.url) {
-      toast({
-        title: "Upload incomplete",
-        description: "Please wait for the file to finish uploading",
-        variant: "default",
-      });
-      return;
-    }
-
-    try {
-      const payload = {
-        content: content.trim(),
-        channelId,
-        replyToId,
-        ...(selectedImage && selectedImage.url && { 
-          fileUrl: selectedImage.url,
-          fileName: selectedImage.name,
-          fileType: selectedImage.type
-        })
-      };
-
-      console.log("Sending payload:", payload);
-
-      const response = await fetch("/api/channels/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text() || "Failed to send message");
-      }
-
-      // Clean up
-      if (selectedImage?.previewUrl) {
-        URL.revokeObjectURL(selectedImage.previewUrl);
-      }
-      setContent("");
-      setSelectedImage(null);
-      
-      // Invalidate both channel messages and thread messages
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['messages', channelId]
-        }),
-        replyToId && queryClient.invalidateQueries({
-          queryKey: ['thread', replyToId]
-        })
-      ]);
-    } catch (error) {
-      toast({
-        title: "Failed to send message",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
-      });
-    }
-  };
-
   const formatText = (format: 'bold' | 'italic' | 'underline') => {
     const textarea = textareaRef.current
     if (!textarea) return
@@ -221,40 +156,15 @@ export function CurrentMessageInput({
     }, 0)
   }
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      onSubmit(e as any)
-    }
-  }
-
   return (
-    <div className={cn(
-      "fixed bottom-0 right-0 p-4 transition-all duration-300 bg-[#1a1f2e] border-t border-[#2a3142] shadow-lg z-10",
-      sidebarCollapsed ? "left-2" : "left-[20%]"
-    )}>
-      <form onSubmit={onSubmit} className="relative">
-        <div className="flex flex-col gap-2 bg-[#1e2330]">
-          {selectedImage && (
-            <div className="relative w-48 h-48 mx-2">
-              <Image
-                src={selectedImage.previewUrl}
-                alt="Preview"
-                fill
-                className="object-cover rounded-md"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute top-1 right-1 h-6 w-6 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400"
-                onClick={removeSelectedImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          <div className="flex items-center gap-2 px-2 bg-[#1e2330]">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#1a1f2e] border-t border-[#2a3142] p-4 transition-all duration-300"
+      style={{
+        left: sidebarCollapsed ? "1rem" : "20%",
+      }}
+    >
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -302,17 +212,30 @@ export function CurrentMessageInput({
               </Button>
             </label>
           </div>
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={placeholder}
-            rows={3}
-            className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
-          />
+
+          {isDM && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#8ba3d4]">
+                Ask {otherUserName}'s AI Agent
+              </span>
+              <Switch
+                checked={isAIEnabled}
+                onCheckedChange={setIsAIEnabled}
+                className="data-[state=checked]:bg-[#3d4663]"
+              />
+            </div>
+          )}
         </div>
-      </form>
+
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={placeholder}
+          rows={3}
+          className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
+        />
+      </div>
     </div>
   )
 } 
