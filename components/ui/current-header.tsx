@@ -7,24 +7,23 @@ import { CurrentProfileCard } from "./current-profile-card"
 import { useUser, SignInButton } from "@clerk/nextjs"
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import axios from "axios"
+import { CurrentMessage } from "./current-message"
 
 interface CurrentHeaderProps {
   sidebarCollapsed: boolean
 }
 
-/**
- * CurrentHeader Component
- * 
- * A responsive header that adapts to sidebar state. Contains:
- * - Profile picture icon (right): Will integrate with Clerk for auth/profile functionality
- * - Search bar (center-right): Placeholder for future search implementation
- * - Channel name (left): Dynamic channel name display
- * 
- * @component
- * @param {boolean} sidebarCollapsed - Whether the sidebar is collapsed, affects layout positioning
- */
+interface LocalAIMessage {
+  content: string;
+  isAI: true;
+}
+
 export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false)
+  const [query, setQuery] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [aiResponse, setAiResponse] = React.useState<LocalAIMessage | null>(null)
   const { user, isLoaded } = useUser();
   const params = useParams();
   const channelId = params?.channelId as string;
@@ -41,6 +40,44 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
     },
     enabled: !!channelId,
   });
+
+  const handleSearch = async (e: React.FormEvent) => {
+    console.log("🔍 Search triggered with query:", query);
+    e.preventDefault();
+    if (!query.trim() || isLoading) {
+      console.log("❌ Search cancelled - empty query or loading");
+      return;
+    }
+
+    try {
+      console.log("🚀 Starting API request...");
+      setIsLoading(true);
+      const response = await axios.post("/api/messages/ai", {
+        question: query,
+        channelId: params.channelId,
+      });
+      
+      console.log("✅ API response received:", response.data);
+      setAiResponse({
+        content: response.data,
+        isAI: true,
+      });
+      
+      setQuery("");
+    } catch (error) {
+      console.error("❌ API request failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      console.log("⌨️ Enter key pressed");
+      e.preventDefault();
+      handleSearch(e);
+    }
+  };
 
   if (!isLoaded) return null;
 
@@ -59,14 +96,18 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
 
         {/* Search Bar - Center-Right */}
         <div className="flex-1 max-w-xl px-4">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8ba3d4]" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Ask gAIge anything..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
               className="w-full bg-[#242b3d] text-[#8ba3d4] rounded-md px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-[#3d4663] placeholder-[#566388]"
             />
-          </div>
+          </form>
         </div>
 
         {/* Profile Icon or Login Button - Right */}
@@ -97,6 +138,30 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
         </div>
       </header>
 
+      {aiResponse && (
+        <div className={cn(
+          "fixed z-10 w-full max-w-xl left-1/2 -translate-x-1/2 top-20",
+          "bg-[#1a1f2e] rounded-lg shadow-lg border border-[#2a3142]"
+        )}>
+          <CurrentMessage
+            content={aiResponse.content}
+            isAI={true}
+            user={{
+              id: "ai",
+              username: "AI Assistant",
+              email: "",
+              imageUrl: "/ai-avatar.png",
+              isOnline: true,
+              status: "ACTIVE",
+              lastSeen: new Date(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              roleId: "",
+            }}
+          />
+        </div>
+      )}
+
       {user && (
         <CurrentProfileCard
           isOpen={isProfileOpen}
@@ -104,5 +169,5 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
         />
       )}
     </>
-  )
+  );
 } 

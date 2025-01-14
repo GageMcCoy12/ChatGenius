@@ -6,6 +6,31 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
+    ],
+    "/api/uploadthing/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/uploadthing/route.js"
+    ],
+    "/api/channels/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/channels/route.js"
+    ],
+    "/api/users/[userId]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/users/[userId]/route.js"
+    ],
+    "/api/messages/ai/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/messages/ai/route.js"
+    ],
     "/channels/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -15,11 +40,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/channels/[channelId]/page.js"
-    ],
-    "/api/channels/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/channels/route.js"
     ],
     "/api/channels/resolve/route": [
       "static/chunks/webpack.js",
@@ -31,25 +51,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/channels/messages/route.js"
     ],
-    "/api/users/[userId]/route": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/users/[userId]/route.js"
-    ],
-    "/api/uploadthing/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/uploadthing/route.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
-    "/api/pusher/auth/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/pusher/auth/route.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }
