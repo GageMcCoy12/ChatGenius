@@ -25,7 +25,7 @@ const model = new ChatOpenAI({
 });
 
 const TEMPLATE = `You are a helpful AI assistant that answers questions based on the provided context from a chat application.
-Use the following pieces of relevant chat messages to answer the question. 
+Use the following pieces of relevant chat messages to answer the question. Try and keep the answer below 150 words. 
 If you don't know the answer, just say that you don't know. Don't try to make up an answer.
 
 Context:

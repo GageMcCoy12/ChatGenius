@@ -6,6 +6,7 @@ import { UserAvatar } from "./user-avatar";
 import { format } from "date-fns";
 import { Reply, SmilePlus } from "lucide-react";
 import { EmojiPicker } from "./emoji-picker";
+import ReactMarkdown from "react-markdown";
 
 interface MessageWithDetails extends Message {
   user: User;
@@ -76,9 +77,20 @@ export function CurrentMessage({
             )}
           </div>
 
-          <p className="text-zinc-200 break-words">
-            {displayContent}
-          </p>
+          <div className={cn(
+            "text-zinc-200 break-words prose prose-invert max-w-none whitespace-pre-wrap",
+            "prose-p:leading-normal prose-p:my-1",
+            "prose-code:bg-[#2a3142] prose-code:px-1 prose-code:py-0.5 prose-code:rounded",
+            "prose-pre:bg-[#2a3142] prose-pre:p-3 prose-pre:rounded-md",
+            "prose-a:text-[#8ba3d4] prose-a:no-underline hover:prose-a:underline",
+            "prose-strong:text-[#8ba3d4] prose-em:text-[#8ba3d4]",
+            "prose-ul:my-1 prose-ol:my-1 prose-li:my-0",
+            isAI && "prose-headings:text-indigo-400"
+          )}>
+            <ReactMarkdown className="whitespace-pre-wrap">
+              {displayContent}
+            </ReactMarkdown>
+          </div>
 
           {!isAI && message && (
             <div className="flex items-center gap-4 mt-1">

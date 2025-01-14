@@ -229,92 +229,90 @@ export function CurrentMessageInput({
   }
 
   return (
-    <form 
-      onSubmit={onSubmit}
-      className={cn(
-        "bg-[#1e2330] border-t border-[#242b3d]",
-        !replyToId && "fixed bottom-0 p-4",
-        !replyToId && (sidebarCollapsed ? "left-2 right-0" : "left-[20%] right-0")
-      )}
-    >
-      <div className="flex flex-col gap-2 bg-[#1e2330]">
-        {selectedImage && (
-          <div className="relative w-48 h-48 mx-2">
-            <Image
-              src={selectedImage.previewUrl}
-              alt="Preview"
-              fill
-              className="object-cover rounded-md"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute top-1 right-1 h-6 w-6 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400"
-              onClick={removeSelectedImage}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <div className="flex items-center gap-2 px-2 bg-[#1e2330]">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
-            onClick={() => formatText('bold')}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
-            onClick={() => formatText('italic')}
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
-            onClick={() => formatText('underline')}
-          >
-            <Underline className="h-4 w-4" />
-          </Button>
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
-              onChange={handleFileUpload}
-            />
+    <div className={cn(
+      "fixed bottom-0 right-0 p-4 transition-all duration-300 bg-[#1a1f2e] border-t border-[#2a3142] shadow-lg z-10",
+      sidebarCollapsed ? "left-2" : "left-[20%]"
+    )}>
+      <form onSubmit={onSubmit} className="relative">
+        <div className="flex flex-col gap-2 bg-[#1e2330]">
+          {selectedImage && (
+            <div className="relative w-48 h-48 mx-2">
+              <Image
+                src={selectedImage.previewUrl}
+                alt="Preview"
+                fill
+                className="object-cover rounded-md"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-1 right-1 h-6 w-6 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400"
+                onClick={removeSelectedImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-2 bg-[#1e2330]">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
-              asChild
+              onClick={() => formatText('bold')}
             >
-              <span>
-                <Upload className="h-4 w-4" />
-              </span>
+              <Bold className="h-4 w-4" />
             </Button>
-          </label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
+              onClick={() => formatText('italic')}
+            >
+              <Italic className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
+              onClick={() => formatText('underline')}
+            >
+              <Underline className="h-4 w-4" />
+            </Button>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                onChange={handleFileUpload}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-zinc-400 hover:text-zinc-200"
+                asChild
+              >
+                <span>
+                  <Upload className="h-4 w-4" />
+                </span>
+              </Button>
+            </label>
+          </div>
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            rows={3}
+            className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
+          />
         </div>
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          rows={3}
-          className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
-        />
-      </div>
-    </form>
+      </form>
+    </div>
   )
 } 

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "../../lib/utils"
-import { Search, User } from "lucide-react"
+import { Search, User, Loader2, X } from "lucide-react"
 import { CurrentProfileCard } from "./current-profile-card"
 import { useUser, SignInButton } from "@clerk/nextjs"
 import { useParams } from "next/navigation"
@@ -11,7 +11,7 @@ import axios from "axios"
 import { CurrentMessage } from "./current-message"
 
 interface CurrentHeaderProps {
-  sidebarCollapsed: boolean
+  sidebarCollapsed: boolean;
 }
 
 interface LocalAIMessage {
@@ -20,10 +20,10 @@ interface LocalAIMessage {
 }
 
 export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
-  const [isProfileOpen, setIsProfileOpen] = React.useState(false)
-  const [query, setQuery] = React.useState("")
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [aiResponse, setAiResponse] = React.useState<LocalAIMessage | null>(null)
+  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [aiResponse, setAiResponse] = React.useState<LocalAIMessage | null>(null);
   const { user, isLoaded } = useUser();
   const params = useParams();
   const channelId = params?.channelId as string;
@@ -42,30 +42,22 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
   });
 
   const handleSearch = async (e: React.FormEvent) => {
-    console.log("🔍 Search triggered with query:", query);
     e.preventDefault();
-    if (!query.trim() || isLoading) {
-      console.log("❌ Search cancelled - empty query or loading");
-      return;
-    }
+    if (!query.trim() || isLoading) return;
 
     try {
-      console.log("🚀 Starting API request...");
       setIsLoading(true);
       const response = await axios.post("/api/messages/ai", {
         question: query,
         channelId: params.channelId,
       });
-      
-      console.log("✅ API response received:", response.data);
       setAiResponse({
         content: response.data,
         isAI: true,
       });
-      
       setQuery("");
     } catch (error) {
-      console.error("❌ API request failed:", error);
+      console.error("Error getting AI response:", error);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +65,6 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      console.log("⌨️ Enter key pressed");
       e.preventDefault();
       handleSearch(e);
     }
@@ -93,11 +84,17 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
             {channel ? `#${channel.name}` : 'Select a channel'}
           </h1>
         </div>
-
+        
         {/* Search Bar - Center-Right */}
         <div className="flex-1 max-w-xl px-4">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8ba3d4]" />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-[#8ba3d4]" />
+              ) : (
+                <Search className="h-4 w-4 text-[#8ba3d4]" />
+              )}
+            </div>
             <input
               type="text"
               placeholder="Ask gAIge anything..."
@@ -140,25 +137,53 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
 
       {aiResponse && (
         <div className={cn(
-          "fixed z-10 w-full max-w-xl left-1/2 -translate-x-1/2 top-20",
-          "bg-[#1a1f2e] rounded-lg shadow-lg border border-[#2a3142]"
-        )}>
-          <CurrentMessage
-            content={aiResponse.content}
-            isAI={true}
-            user={{
-              id: "ai",
-              username: "AI Assistant",
-              email: "",
-              imageUrl: "/ai-avatar.png",
-              isOnline: true,
-              status: "ACTIVE",
-              lastSeen: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              roleId: "",
-            }}
-          />
+          "fixed z-10 w-full max-w-xl overflow-hidden",
+          "bg-[#1e2538] rounded-lg shadow-xl border border-[#3d4663] transition-all duration-300",
+          "mt-2"
+        )}
+        style={{
+          left: "calc(50% + (20% - 4rem) / 2)",
+          width: "calc(100% - 8rem)",
+          maxWidth: "36rem",
+          top: "4rem",
+          maxHeight: "80vh"
+        }}
+        >
+          <div className="relative h-full">
+            {/* Close Button */}
+            <button
+              onClick={() => setAiResponse(null)}
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-[#2a3142] transition-colors z-20"
+              aria-label="Close AI response"
+            >
+              <X className="h-4 w-4 text-[#8ba3d4]" />
+            </button>
+            
+            {/* AI Badge */}
+            <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[#3d4663] border border-[#566388] z-20">
+              <span className="text-xs font-medium text-[#8ba3d4]">AI Assistant</span>
+            </div>
+
+            {/* Message Content */}
+            <div className="pt-12 px-6 pb-6 overflow-y-auto" style={{ maxHeight: "calc(80vh - 4rem)" }}>
+              <CurrentMessage
+                content={aiResponse.content}
+                isAI={true}
+                user={{
+                  id: "ai",
+                  username: "gAIge",
+                  email: "",
+                  imageUrl: "/ai-avatar.png",
+                  isOnline: true,
+                  status: "ACTIVE",
+                  lastSeen: new Date(),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  roleId: "",
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
 

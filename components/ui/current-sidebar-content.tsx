@@ -102,20 +102,24 @@ export function CurrentSidebarContent({
                     <div
                       key={channel.id}
                       className={cn(
-                        "flex items-center justify-between px-8 py-2 cursor-pointer rounded-lg",
+                        "flex items-center justify-between px-8 py-2 rounded-lg",
                         channel.id === currentChannel
                           ? "bg-[#242b3d] text-white"
                           : "text-[#8ba3d4] hover:bg-[#1f2437]"
                       )}
-                      onClick={() => handleChannelClick(channel.id)}
                     >
-                      <span className="text-sm"># {channel.name}</span>
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => handleChannelClick(channel.id)}
+                      >
+                        <span className="text-sm"># {channel.name}</span>
+                      </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenu(activeMenu === channel.id ? null : channel.id);
                         }}
-                        className="p-1 hover:bg-[#242b3d] rounded-md"
+                        className="p-1 hover:bg-[#242b3d] rounded-md cursor-pointer"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>

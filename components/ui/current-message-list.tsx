@@ -267,7 +267,7 @@ export function CurrentMessageList({
 
   return (
     <div className={cn(
-      "fixed top-16 bottom-32 overflow-y-auto transition-all duration-300",
+      "fixed top-16 bottom-36 overflow-y-auto transition-all duration-300 pb-4",
       sidebarCollapsed ? "left-2 right-0" : "left-[20%] right-0"
     )}>
       <div className="flex flex-col w-full">
