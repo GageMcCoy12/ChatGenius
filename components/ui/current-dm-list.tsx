@@ -42,8 +42,8 @@ export function CurrentDMList() {
 
       if (!response.ok) throw new Error("Failed to create/get DM channel")
       
-      const { channelId } = await response.json()
-      router.push(`/channels/${channelId}`)
+      const channel = await response.json()
+      router.push(`/channels/${channel.id}`)
     } catch (error) {
       console.error("Error handling DM click:", error)
     }

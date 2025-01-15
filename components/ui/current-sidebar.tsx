@@ -55,7 +55,8 @@ export function CurrentSidebar() {
       </div>
       <CurrentMessageInput 
         sidebarCollapsed={isCollapsed} 
-        channelId={channelId} 
+        channelId={channelId || ''} 
+        placeholder="Type a message..."
       />
     </>
   )

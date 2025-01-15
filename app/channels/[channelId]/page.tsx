@@ -19,6 +19,21 @@ export default function ChannelPage({ params }: { params: Promise<{ channelId: s
   const { isCollapsed } = useSidebarState()
   const [threadMessage, setThreadMessage] = useState<MessageWithDetails | null>(null)
   
+  // If channelId is undefined, show loading state
+  if (!resolvedParams?.channelId) {
+    return (
+      <div className="flex flex-col h-full bg-[#1a1f2e] pb-32">
+        <div className="flex-1 overflow-hidden">
+          <div className="animate-pulse space-y-4 p-4">
+            <div className="h-20 bg-[#242b3d] rounded-md" />
+            <div className="h-20 bg-[#242b3d] rounded-md" />
+            <div className="h-20 bg-[#242b3d] rounded-md" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <div className="flex flex-col h-full bg-[#1a1f2e] pb-32">
       <div className="flex-1 overflow-hidden">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
@@ -61,18 +61,29 @@ export function CurrentMessageInput({
   const queryClient = useQueryClient()
   const { toast } = useToast()
   
-  // Get other user's name if this is a DM channel
-  const { data: channel } = useQuery({
+  // Check if this is a DM channel
+  const isDM = channelId?.startsWith('dm-');
+
+  // Get channel data
+  const { data: channel, isLoading: isChannelLoading } = useQuery({
     queryKey: ['channel', channelId],
     queryFn: async () => {
-      const response = await fetch(`/api/channels/resolve?channelId=${channelId}`)
-      if (!response.ok) throw new Error('Failed to fetch channel')
-      return response.json()
-    }
-  })
+      if (!channelId) return null;
+      const response = await fetch(`/api/channels/resolve?channelId=${channelId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch channel');
+      }
+      return response.json();
+    },
+    enabled: !!channelId,
+  });
 
-  const isDM = channelId.startsWith('dm-')
-  const otherUserName = isDM ? channel?.name.split(', ').find((name: string) => name !== channel?.currentUserName) : null
+  // For DM channels, get the other user's name
+  const otherUserName = useMemo(() => {
+    if (!isDM || !channel?.name) return '';
+    const names = channel.name.split(', ');
+    return names.find((name: string) => name !== user?.username) || '';
+  }, [isDM, channel?.name, user?.username]);
 
   const { startUpload, isUploading } = useUploadThing("messageAttachment", {
     onClientUploadComplete: (res) => {
@@ -154,6 +165,20 @@ export function CurrentMessageInput({
         end + cursorOffset
       )
     }, 0)
+  }
+
+  // If channel is loading or channelId is missing, show loading state
+  if (isChannelLoading || !channelId) {
+    return (
+      <div className={cn(
+        "fixed bottom-0 right-0 h-32 bg-[#1a1f2e] border-t border-[#2a3142] transition-all duration-300",
+        sidebarCollapsed ? "left-2" : "left-[20%]"
+      )}>
+        <div className="animate-pulse p-4">
+          <div className="h-24 bg-[#242b3d] rounded-md" />
+        </div>
+      </div>
+    );
   }
 
   return (

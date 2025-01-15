@@ -21,7 +21,10 @@ export async function POST(req: Request) {
 
     // Check if DM channel already exists
     let channel = await prisma.channel.findUnique({
-      where: { id: channelId }
+      where: { id: channelId },
+      include: {
+        members: true
+      }
     })
 
     // If channel doesn't exist, create it
@@ -36,6 +39,9 @@ export async function POST(req: Request) {
               { userId: otherUserId }
             ]
           }
+        },
+        include: {
+          members: true
         }
       })
 
@@ -55,15 +61,39 @@ export async function POST(req: Request) {
 
       channel = await prisma.channel.update({
         where: { id: channelId },
-        data: { name: channelName }
+        data: { name: channelName },
+        include: {
+          members: true
+        }
       })
+    } else {
+      // Ensure both users are members
+      const memberIds = channel.members.map(member => member.userId)
+      const missingUserIds = [profile.id, otherUserId].filter(id => !memberIds.includes(id))
+
+      if (missingUserIds.length > 0) {
+        await prisma.channelMember.createMany({
+          data: missingUserIds.map(userId => ({
+            userId,
+            channelId
+          })),
+          skipDuplicates: true
+        })
+
+        channel = await prisma.channel.findUnique({
+          where: { id: channelId },
+          include: {
+            members: true
+          }
+        })
+      }
     }
 
     if (!channel) {
       return new NextResponse("Failed to create channel", { status: 500 })
     }
 
-    return NextResponse.json({ channelId: channel.id })
+    return NextResponse.json(channel)
   } catch (error) {
     console.error("[CHANNEL_DM_POST]", error)
     return new NextResponse("Internal Error", { status: 500 })
