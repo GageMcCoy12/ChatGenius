@@ -167,6 +167,81 @@ export function CurrentMessageInput({
     }, 0)
   }
 
+  const handleSubmit = async () => {
+    if (!content.trim() || !user) return;
+
+    try {
+      const formattedContent = formatMessageContent(content);
+      
+      // If AI is enabled and this is a DM, send to AI endpoint
+      if (isAIEnabled && isDM) {
+        const aiResponse = await fetch('/api/messages/ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: formattedContent,
+            channelId
+          }),
+        });
+
+        if (!aiResponse.ok) {
+          throw new Error('Failed to get AI response');
+        }
+
+        // Clear the input after successful AI message
+        setContent("");
+        if (selectedImage?.previewUrl) {
+          URL.revokeObjectURL(selectedImage.previewUrl);
+          setSelectedImage(null);
+        }
+        return;
+      }
+
+      // Regular message sending logic - Updated endpoint
+      const response = await fetch('/api/channels/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: formattedContent,
+          channelId,
+          replyToId: replyId,
+          fileUrl: selectedImage?.url,
+          fileName: selectedImage?.name,
+          fileType: selectedImage?.type,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`);
+      }
+
+      // Clear the input after successful send
+      setContent("");
+      if (selectedImage?.previewUrl) {
+        URL.revokeObjectURL(selectedImage.previewUrl);
+        setSelectedImage(null);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast({
+        title: "Failed to send message",
+        description: error instanceof Error ? error.message : "Please try again later",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   // If channel is loading or channelId is missing, show loading state
   if (isChannelLoading || !channelId) {
     return (
@@ -252,14 +327,44 @@ export function CurrentMessageInput({
           )}
         </div>
 
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
-        />
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isAIEnabled && isDM ? `Ask ${otherUserName} a question...` : placeholder}
+            rows={3}
+            className="resize-none bg-[#242b3d] border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-400"
+          />
+          {selectedImage && (
+            <div className="absolute bottom-full left-0 mb-2 p-2 bg-[#242b3d] rounded-md">
+              <div className="relative">
+                <Image
+                  src={selectedImage.previewUrl}
+                  alt="Upload preview"
+                  width={100}
+                  height={100}
+                  className="rounded-md"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 bg-red-500 hover:bg-red-600 rounded-full"
+                  onClick={() => {
+                    if (selectedImage.previewUrl) {
+                      URL.revokeObjectURL(selectedImage.previewUrl);
+                    }
+                    setSelectedImage(null);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

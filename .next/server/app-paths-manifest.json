@@ -1,10 +1,11 @@
 {
-  "/api/users/route": "app/api/users/route.js",
   "/api/channels/route": "app/api/channels/route.js",
-  "/api/channels/resolve/route": "app/api/channels/resolve/route.js",
   "/api/channels/messages/route": "app/api/channels/messages/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
+  "/api/channels/resolve/route": "app/api/channels/resolve/route.js",
+  "/api/users/route": "app/api/users/route.js",
   "/api/users/[userId]/route": "app/api/users/[userId]/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
+  "/sign-in/[[...sign-in]]/page": "app/sign-in/[[...sign-in]]/page.js",
   "/channels/[channelId]/page": "app/channels/[channelId]/page.js"
 }

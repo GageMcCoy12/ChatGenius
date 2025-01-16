@@ -38,6 +38,8 @@ export function CurrentMessage({
   // Use either direct props (for AI) or message object (for regular messages)
   const displayContent = directContent || message?.content;
   const user = directUser || message?.user;
+  // Use isAI prop or message.isAI
+  const isAIMessage = isAI || message?.isAI;
 
   if (!displayContent || !user) return null;
 
@@ -53,23 +55,28 @@ export function CurrentMessage({
   return (
     <div className={cn(
       "group hover:bg-[#1f2437] w-full pl-4 pr-8 py-2 transition-colors",
-      isAI && "bg-indigo-50/10 hover:bg-indigo-50/20"
+      isAIMessage && "bg-indigo-50/10 hover:bg-indigo-50/20"
     )}>
       <div className="flex gap-3 max-w-[800px]">
         <div className="flex-shrink-0">
           <UserAvatar 
-            src={isAI ? "/ai-avatar.png" : user.imageUrl} 
-            fallback={isAI ? "AI" : user.username?.[0]}
+            src={isAIMessage ? "/ai-avatar.png" : user.imageUrl} 
+            fallback={isAIMessage ? "AI" : user.username?.[0]}
           />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn(
               "font-semibold",
-              isAI ? "text-indigo-400" : "text-[#8ba3d4]"
+              isAIMessage ? "text-indigo-400" : "text-[#8ba3d4]"
             )}>
-              {isAI ? "AI Assistant" : user.username}
+              {user.username}
             </span>
+            {isAIMessage && (
+              <span className="text-xs text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-full">
+                AI Response
+              </span>
+            )}
             {message && (
               <span className="text-xs text-[#566388]">
                 {format(new Date(message.createdAt), "MMM d, yyyy HH:mm")}
@@ -85,14 +92,14 @@ export function CurrentMessage({
             "prose-a:text-[#8ba3d4] prose-a:no-underline hover:prose-a:underline",
             "prose-strong:text-[#8ba3d4] prose-em:text-[#8ba3d4]",
             "prose-ul:my-1 prose-ol:my-1 prose-li:my-0",
-            isAI && "prose-headings:text-indigo-400"
+            isAIMessage && "prose-headings:text-indigo-400"
           )}>
             <ReactMarkdown className="whitespace-pre-wrap">
               {displayContent}
             </ReactMarkdown>
           </div>
 
-          {!isAI && message && (
+          {!isAIMessage && message && (
             <div className="flex items-center gap-4 mt-1">
               {/* Reactions */}
               <div className="flex items-center gap-1 flex-wrap">

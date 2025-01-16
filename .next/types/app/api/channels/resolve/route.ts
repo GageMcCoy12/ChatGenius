@@ -1,4 +1,4 @@
-// File: /Users/gagemccoy/Documents/ChatGenius/app/api/channels/resolve/route.ts
+// File: /Users/gagemccoy/Desktop/ChatGenius/app/api/channels/resolve/route.ts
 import * as entry from '../../../../../../app/api/channels/resolve/route.js'
 import type { NextRequest } from 'next/server.js'
 
