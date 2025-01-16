@@ -6,10 +6,25 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/channels/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/channels/layout.js"
+    ],
+    "/channels/[channelId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/channels/[channelId]/page.js"
+    ],
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
+    ],
+    "/api/users/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/users/route.js"
     ],
     "/api/channels/route": [
       "static/chunks/webpack.js",
@@ -21,50 +36,35 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/[userId]/route.js"
     ],
-    "/api/users/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/users/route.js"
-    ],
     "/api/uploadthing/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/uploadthing/route.js"
-    ],
-    "/channels/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/channels/layout.js"
-    ],
-    "/channels/[channelId]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/channels/[channelId]/page.js"
-    ],
-    "/api/channels/messages/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/channels/messages/route.js"
     ],
     "/api/channels/resolve/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/channels/resolve/route.js"
     ],
-    "/api/channels/dm/route": [
+    "/api/channels/messages/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/channels/dm/route.js"
+      "static/chunks/app/api/channels/messages/route.js"
     ],
-    "/sign-in/[[...sign-in]]/page": [
+    "/api/tts/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/sign-in/[[...sign-in]]/page.js"
+      "static/chunks/app/api/tts/route.js"
     ],
     "/api/messages/ai/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/messages/ai/route.js"
+    ],
+    "/api/channels/dm/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/channels/dm/route.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

@@ -55,14 +55,43 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { content, channelId } = await req.json();
-
-    // Verify this is a DM channel
-    if (!channelId.startsWith('dm-')) {
-      return new NextResponse("Invalid channel type", { status: 400 });
+    const body = await req.json();
+    const { content, question, channelId } = body;
+    
+    // Use either content or question
+    const queryText = content || question;
+    if (!queryText) {
+      return new NextResponse("No query text provided", { status: 400 });
     }
 
-    // Get channel details
+    // For search queries (non-DM), skip channel verification
+    if (!channelId.startsWith('dm-')) {
+      // Get all messages from the channel for context
+      const channelMessages = await prisma.message.findMany({
+        where: { channelId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: { user: true }
+      });
+
+      // Format message history
+      const messageHistory = channelMessages
+        .reverse()
+        .map(msg => `[${new Date(msg.createdAt).toLocaleString()}] ${msg.user.username}: ${msg.content}`)
+        .join("\n");
+
+      // Generate response using LangChain
+      const response = await chain.invoke({
+        username: "gAIge",
+        styleAnalysis: { tone: "helpful and informative", style: "clear and concise" },
+        messageHistory,
+        question: queryText
+      });
+
+      return NextResponse.json(response);
+    }
+
+    // DM channel logic
     const channel = await prisma.channel.findUnique({
       where: { id: channelId },
       include: {
@@ -90,7 +119,7 @@ export async function POST(req: Request) {
     }
 
     // Retrieve message history and analyze style
-    const messageResult = await retrieveMessages(content, profile.id, otherUserId);
+    const messageResult = await retrieveMessages(queryText, profile.id, otherUserId);
 
     // Format message history
     const messageHistory = messageResult.styleMessages
@@ -99,29 +128,15 @@ export async function POST(req: Request) {
 
     // Generate response using LangChain
     const response = await chain.invoke({
-      username: otherUser.username,
+      username: otherUser.username || "User",
       styleAnalysis: messageResult.styleAnalysis,
       messageHistory,
-      question: content,
+      question: queryText
     });
 
-    // Create the AI message in the database
-    const message = await prisma.message.create({
-      data: {
-        content: response,
-        channelId,
-        userId: otherUserId,
-        isAI: true
-      },
-      include: {
-        user: true,
-        reactions: true
-      }
-    });
-
-    return NextResponse.json(message);
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("[AI_MESSAGE_ERROR]", error);
+    console.error("[MESSAGES_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

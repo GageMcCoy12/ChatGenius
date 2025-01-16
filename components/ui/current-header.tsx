@@ -47,12 +47,24 @@ export function CurrentHeader({ sidebarCollapsed }: CurrentHeaderProps) {
 
     try {
       setIsLoading(true);
-      const response = await axios.post("/api/messages/ai", {
-        question: query,
-        channelId: params.channelId,
+      const response = await fetch("/api/messages/ai", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: query,
+          channelId: params.channelId,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
       setAiResponse({
-        content: response.data,
+        content: data,
         isAI: true,
       });
       setQuery("");

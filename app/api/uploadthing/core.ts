@@ -16,43 +16,59 @@ export const ourFileRouter = {
     pdf: { maxFileSize: "16MB" },
     video: { maxFileSize: "16MB" }
   })
-    .middleware(async () => {
+    .middleware(async ({ req }) => {
       try {
         logStage("Middleware Start");
         
-        // Verify environment variables
-        if (!process.env.UPLOADTHING_SECRET || !process.env.UPLOADTHING_APP_ID) {
-          throw new Error("UploadThing environment variables not configured");
-        }
+        // Get auth session
+        const { userId } = await auth();
         
-        const session = await auth();
-        if (!session || !session.userId) {
-          logStage("Middleware Error", "No authenticated session found");
+        if (!userId) {
+          logStage("Middleware Error", { error: "No authenticated session" });
           throw new Error("Unauthorized: No authenticated session");
         }
+
+        // Verify environment variables
+        if (!process.env.UPLOADTHING_SECRET || !process.env.UPLOADTHING_APP_ID) {
+          logStage("Middleware Error", { error: "Missing UploadThing configuration" });
+          throw new Error("Server configuration error: UploadThing not configured");
+        }
         
-        logStage("Middleware Success", { userId: session.userId });
-        return { userId: session.userId };
+        logStage("Middleware Success", { userId });
+        return { userId };
       } catch (error) {
-        logStage("Middleware Error", error);
+        logStage("Middleware Error", { 
+          error: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined
+        });
         throw error;
       }
     })
-    .onUploadComplete(({ metadata, file }) => {
-      logStage("Upload Complete Start", { metadata, fileUrl: file.url });
-      
-      if (!metadata.userId) {
-        throw new Error("No userId in metadata");
+    .onUploadComplete(async ({ metadata, file }) => {
+      try {
+        logStage("Upload Complete Start", { metadata, file });
+        
+        if (!metadata.userId) {
+          throw new Error("No userId in metadata");
+        }
+        
+        const result = {
+          url: file.url,
+          name: file.name,
+          size: file.size,
+          key: file.key
+        };
+        
+        logStage("Upload Complete Success", result);
+        return result;
+      } catch (error) {
+        logStage("Upload Complete Error", { 
+          error: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        throw error;
       }
-      
-      const result = {
-        url: file.url,
-        name: file.name
-      };
-      
-      logStage("Upload Complete Success", result);
-      return result;
     })
 } satisfies FileRouter;
- 
+
 export type OurFileRouter = typeof ourFileRouter; 

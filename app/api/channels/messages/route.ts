@@ -21,9 +21,10 @@ export async function POST(req: Request) {
       return new NextResponse("Content or file required", { status: 400 })
     }
 
+    // Create message with file information if present
     const message = await prisma.message.create({
       data: {
-        content: content || "Message content unavailable",
+        content: content || "Shared a file",
         channelId,
         userId,
         replyToId,
@@ -46,20 +47,33 @@ export async function POST(req: Request) {
       })
     }
 
-    // Broadcast the message through Pusher
-    console.log('📢 Broadcasting message:', message);
+    // Log the message details for debugging
+    console.log('📢 Broadcasting message:', {
+      id: message.id,
+      content: message.content,
+      fileUrl: message.fileUrl,
+      fileName: message.fileName,
+      fileType: message.fileType,
+      userId: message.userId,
+      channelId: message.channelId
+    });
+
     await broadcastMessage(channelId, message);
     console.log('✅ Message broadcasted successfully');
 
     return NextResponse.json(message)
   } catch (error) {
-    // Safely log the error
     console.error("[MESSAGES_POST] Error:", {
       message: error instanceof Error ? error.message : "Unknown error",
       name: error instanceof Error ? error.name : "Unknown",
       stack: error instanceof Error ? error.stack : undefined
     });
-    return new NextResponse("Internal Error", { status: 500 })
+    return new NextResponse(
+      JSON.stringify({ 
+        message: error instanceof Error ? error.message : "Internal server error" 
+      }), 
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 }
 

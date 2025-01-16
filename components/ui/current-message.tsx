@@ -1,12 +1,15 @@
 "use client"
 
-import { cn } from "@/lib/utils";
-import { Message, User, Reaction } from "@prisma/client";
-import { UserAvatar } from "./user-avatar";
-import { format } from "date-fns";
-import { Reply, SmilePlus } from "lucide-react";
-import { EmojiPicker } from "./emoji-picker";
-import ReactMarkdown from "react-markdown";
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Message, User, Reaction } from "@prisma/client"
+import { UserAvatar } from "./user-avatar"
+import { format } from "date-fns"
+import { Reply, SmilePlus } from "lucide-react"
+import { EmojiPicker } from "./emoji-picker"
+import ReactMarkdown from "react-markdown"
+import { TTSButton } from "./tts-button"
+import { Button } from "@/components/ui/button"
 
 interface MessageWithDetails extends Message {
   user: User;
@@ -30,117 +33,94 @@ export function CurrentMessage({
   message,
   content: directContent,
   user: directUser,
-  isAI = false,
+  isAI,
   onReactionAdd,
   onReactionRemove,
   onThreadOpen,
 }: CurrentMessageProps) {
+  const [showActions, setShowActions] = React.useState(false)
+
   // Use either direct props (for AI) or message object (for regular messages)
-  const displayContent = directContent || message?.content;
-  const user = directUser || message?.user;
-  // Use isAI prop or message.isAI
-  const isAIMessage = isAI || message?.isAI;
+  const displayContent = directContent || message?.content
+  const displayUser = directUser || message?.user
+  const isAIMessage = isAI || message?.isAI
 
-  if (!displayContent || !user) return null;
-
-  // Group reactions by emoji
-  const groupedReactions = message?.reactions?.reduce((acc, reaction) => {
-    if (!acc[reaction.emoji]) {
-      acc[reaction.emoji] = [];
-    }
-    acc[reaction.emoji].push(reaction.userId);
-    return acc;
-  }, {} as { [key: string]: string[] }) || {};
+  if (!displayContent || !displayUser) return null
 
   return (
-    <div className={cn(
-      "group hover:bg-[#1f2437] w-full pl-4 pr-8 py-2 transition-colors",
-      isAIMessage && "bg-indigo-50/10 hover:bg-indigo-50/20"
-    )}>
-      <div className="flex gap-3 max-w-[800px]">
-        <div className="flex-shrink-0">
-          <UserAvatar 
-            src={isAIMessage ? "/ai-avatar.png" : user.imageUrl} 
-            fallback={isAIMessage ? "AI" : user.username?.[0]}
-          />
+    <div
+      className="group relative flex items-start gap-3 py-4 px-4 hover:bg-[#242b3d]/50 transition-colors"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      <UserAvatar
+        src={displayUser.imageUrl}
+        fallback={displayUser.username?.[0]?.toUpperCase()}
+      />
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-zinc-200">
+            {displayUser.username}
+          </span>
+          <span className="text-xs text-zinc-400">
+            {format(new Date(message?.createdAt || new Date()), 'p')}
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={cn(
-              "font-semibold",
-              isAIMessage ? "text-indigo-400" : "text-[#8ba3d4]"
-            )}>
-              {user.username}
-            </span>
-            {isAIMessage && (
-              <span className="text-xs text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-full">
-                AI Response
-              </span>
-            )}
-            {message && (
-              <span className="text-xs text-[#566388]">
-                {format(new Date(message.createdAt), "MMM d, yyyy HH:mm")}
-              </span>
-            )}
-          </div>
 
-          <div className={cn(
-            "text-zinc-200 break-words prose prose-invert max-w-none whitespace-pre-wrap",
-            "prose-p:leading-normal prose-p:my-1",
-            "prose-code:bg-[#2a3142] prose-code:px-1 prose-code:py-0.5 prose-code:rounded",
-            "prose-pre:bg-[#2a3142] prose-pre:p-3 prose-pre:rounded-md",
-            "prose-a:text-[#8ba3d4] prose-a:no-underline hover:prose-a:underline",
-            "prose-strong:text-[#8ba3d4] prose-em:text-[#8ba3d4]",
-            "prose-ul:my-1 prose-ol:my-1 prose-li:my-0",
-            isAIMessage && "prose-headings:text-indigo-400"
-          )}>
-            <ReactMarkdown className="whitespace-pre-wrap">
-              {displayContent}
-            </ReactMarkdown>
-          </div>
+        <div className="text-sm text-zinc-200">
+          <ReactMarkdown>{displayContent}</ReactMarkdown>
+        </div>
 
-          {!isAIMessage && message && (
-            <div className="flex items-center gap-4 mt-1">
-              {/* Reactions */}
-              <div className="flex items-center gap-1 flex-wrap">
-                {Object.entries(groupedReactions).map(([emoji, userIds]) => (
-                  <button
-                    key={emoji}
-                    onClick={() => onReactionAdd?.(message.id, emoji)}
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#242b3d] hover:bg-[#2a324a] transition-colors",
-                      userIds.includes(user.id) ? "text-[#8ba3d4]" : "text-[#566388]"
-                    )}
-                  >
-                    <span>{emoji}</span>
-                    <span>{userIds.length}</span>
-                  </button>
-                ))}
-                <EmojiPicker onEmojiSelect={(emoji) => onReactionAdd?.(message.id, emoji)} />
-              </div>
-
-              {/* Reply button */}
-              <button
-                onClick={() => onThreadOpen?.(message)}
-                className="flex items-center gap-1 text-xs text-[#566388] hover:text-[#8ba3d4] opacity-0 group-hover:opacity-100 transition-opacity"
+        {/* Show file if present */}
+        {message?.fileUrl && (
+          <div className="mt-2">
+            {message.fileType?.startsWith('image') ? (
+              <img
+                src={message.fileUrl}
+                alt={message.fileName || 'Uploaded image'}
+                className="max-w-md rounded-md"
+              />
+            ) : (
+              <a
+                href={message.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
               >
-                <Reply className="h-3 w-3" />
-                <span>Reply</span>
-              </button>
+                {message.fileName || 'Download file'}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
 
-              {/* Thread count */}
-              {message.threadCount > 0 && (
-                <button
-                  onClick={() => onThreadOpen?.(message)}
-                  className="text-xs text-[#566388] hover:text-[#8ba3d4]"
-                >
-                  {message.threadCount} {message.threadCount === 1 ? "reply" : "replies"}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Message Actions */}
+      <div className={cn(
+        "absolute right-4 top-4 flex items-center gap-2 transition-opacity",
+        showActions ? "opacity-100" : "opacity-0"
+      )}>
+        <TTSButton
+          text={displayContent}
+          className="text-zinc-400 hover:text-zinc-200"
+        />
+        {onThreadOpen && message && (
+          <Button
+            onClick={() => onThreadOpen(message)}
+            variant="ghost"
+            size="icon"
+            className="text-zinc-400 hover:text-zinc-200"
+          >
+            <Reply className="h-4 w-4" />
+          </Button>
+        )}
+        {onReactionAdd && message && (
+          <EmojiPicker 
+            onEmojiSelect={(emoji) => onReactionAdd(message.id, emoji)}
+            triggerClassName="text-zinc-400 hover:text-zinc-200"
+          />
+        )}
       </div>
     </div>
-  );
+  )
 } 

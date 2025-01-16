@@ -46,6 +46,15 @@ function formatMessageContent(content: string) {
     .replace(/__(.*?)__/g, '<span class="underline">$1</span>')
 }
 
+function getFileType(fileName: string): string {
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image';
+  if (['mp4', 'webm', 'ogg'].includes(extension)) return 'video';
+  if (['pdf'].includes(extension)) return 'pdf';
+  if (['doc', 'docx'].includes(extension)) return 'document';
+  return 'unknown';
+}
+
 export function CurrentMessageInput({
   sidebarCollapsed,
   channelId,
@@ -91,12 +100,21 @@ export function CurrentMessageInput({
       
       const uploadedFile = res[0];
       logStage("Client Upload Complete", uploadedFile);
+
+      // Map the UploadThing response to our expected format
+      const fileUrl = `https://uploadthing.com/f/${uploadedFile.key}`;
       
-      setSelectedImage(prev => prev ? {
-        ...prev,
-        url: uploadedFile.url,
-        name: uploadedFile.name
-      } : null);
+      setSelectedImage({
+        url: fileUrl,
+        previewUrl: selectedImage?.previewUrl || fileUrl,
+        name: uploadedFile.name,
+        type: getFileType(uploadedFile.name)
+      });
+
+      toast({
+        title: "Upload successful",
+        description: "Your file has been uploaded successfully.",
+      });
     },
     onUploadError: (error: Error) => {
       logStage("Upload Error", error);
@@ -116,6 +134,17 @@ export function CurrentMessageInput({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (16MB limit)
+    const MAX_SIZE = 16 * 1024 * 1024; // 16MB in bytes
+    if (file.size > MAX_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Maximum file size is 16MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Show preview using local URL immediately
     const localPreviewUrl = URL.createObjectURL(file);
     setSelectedImage({
@@ -125,8 +154,21 @@ export function CurrentMessageInput({
       type: file.type
     });
 
-    // Start upload - state managed by useUploadThing
-    startUpload([file]);
+    try {
+      // Start upload - state managed by useUploadThing
+      await startUpload([file]);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading your file",
+        variant: "destructive",
+      });
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+      setSelectedImage(null);
+    }
   };
 
   const formatText = (format: 'bold' | 'italic' | 'underline') => {
@@ -168,10 +210,10 @@ export function CurrentMessageInput({
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() || !user) return;
+    if ((!content.trim() && !selectedImage?.url) || !user) return;
 
     try {
-      const formattedContent = formatMessageContent(content);
+      const formattedContent = content ? formatMessageContent(content) : "";
       
       // If AI is enabled and this is a DM, send to AI endpoint
       if (isAIEnabled && isDM) {
@@ -182,7 +224,10 @@ export function CurrentMessageInput({
           },
           body: JSON.stringify({
             content: formattedContent,
-            channelId
+            channelId,
+            fileUrl: selectedImage?.url,
+            fileName: selectedImage?.name,
+            fileType: selectedImage?.type,
           }),
         });
 
@@ -199,14 +244,14 @@ export function CurrentMessageInput({
         return;
       }
 
-      // Regular message sending logic - Updated endpoint
+      // Regular message sending logic
       const response = await fetch('/api/channels/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: formattedContent,
+          content: formattedContent || "Shared a file", // Default message if only file is shared
           channelId,
           replyToId: replyId,
           fileUrl: selectedImage?.url,
@@ -216,20 +261,26 @@ export function CurrentMessageInput({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to send message');
       }
 
-      // Clear the input after successful send
+      // Clear inputs after successful send
       setContent("");
       if (selectedImage?.previewUrl) {
         URL.revokeObjectURL(selectedImage.previewUrl);
         setSelectedImage(null);
       }
+      
+      // Refetch messages to update the UI
+      queryClient.invalidateQueries({
+        queryKey: ['messages', channelId]
+      });
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('Error sending message:', error);
       toast({
         title: "Failed to send message",
-        description: error instanceof Error ? error.message : "Please try again later",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
